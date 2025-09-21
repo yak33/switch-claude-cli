@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 讨论和问题
+    url: https://github.com/yak33/switch-claude-cli/discussions
+    about: 有疑问？想讨论新想法？前往 Discussions！
+  - name: 📚 文档
+    url: https://github.com/yak33/switch-claude-cli#readme
+    about: 查看详细的使用文档和说明
+  - name: 📦 NPM 包
+    url: https://www.npmjs.com/package/switch-claude-cli
+    about: 查看 NPM 包信息和版本历史

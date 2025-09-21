@@ -1,0 +1,87 @@
+name: Feature Request
+description: 建议一个新功能
+title: "[Feature]: "
+labels: ["enhancement", "需要分类"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的功能建议！我们重视你的想法。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题描述
+      description: 你的功能请求是否与某个问题相关？请清楚简洁地描述问题是什么。
+      placeholder: 我遇到的问题是...
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建议的解决方案
+      description: 你希望发生什么？清楚简洁地描述你想要的功能。
+      placeholder: 我希望能够...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 你考虑过的任何替代解决方案或功能的清楚简洁描述。
+      placeholder: 我也考虑过...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 这个功能对你有多重要？
+      options:
+        - 低 - 有了更好
+        - 中 - 会显著改善使用体验
+        - 高 - 目前的限制影响了我的使用
+        - 紧急 - 无法正常使用工具
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: category
+    attributes:
+      label: 功能类别
+      description: 这个功能属于哪个类别？（可多选）
+      options:
+        - label: 核心功能
+        - label: 用户界面/用户体验
+        - label: 配置管理
+        - label: 性能优化
+        - label: 错误处理
+        - label: 安全性
+        - label: 文档
+        - label: 其他
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 使用场景
+      description: 描述你会如何使用这个功能？什么场景下需要它？
+      placeholder: 当我需要...的时候，这个功能可以...
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: 实现建议
+      description: 如果你有关于如何实现这个功能的想法，请分享！
+      placeholder: 我认为可以通过...来实现
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 额外信息
+      description: 添加任何其他关于功能请求的上下文信息、截图或示例。
+      placeholder: 其他可能有用的信息...

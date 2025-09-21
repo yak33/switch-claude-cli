@@ -108,10 +108,12 @@ pids
 # dotenv environment variables file
 .env
 
-# Sensitive configuration files
+# Development and testing files
+test-config.json
+*.test.js
+NPM_PUBLISH.md
+SECURITY.md
 providers.json
-
-# Cache files
 .switch-claude-cache.json
 
 # OS generated files
@@ -134,3 +136,7 @@ Thumbs.db
 *.bak
 *.backup
 *.old
+
+# Local development files
+local/
+dev/

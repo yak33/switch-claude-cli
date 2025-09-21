@@ -1,5 +1,10 @@
 # Switch Claude CLI
 
+[![npm version](https://badge.fury.io/js/switch-claude-cli.svg)](https://www.npmjs.com/package/switch-claude-cli)
+[![GitHub license](https://img.shields.io/github/license/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/issues)
+[![GitHub stars](https://img.shields.io/github/stars/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/stargazers)
+
 一个智能的 Claude API Provider 切换工具，帮助你在多个第三方 Claude API 服务之间快速切换。
 
 ## ✨ 功能特性
@@ -22,7 +27,7 @@ npm install -g switch-claude-cli
 ### 从源码安装
 
 ```bash
-git clone https://github.com/yourusername/switch-claude-cli.git
+git clone https://github.com/yak33/switch-claude-cli.git
 cd switch-claude-cli
 npm install
 npm link
@@ -311,5 +316,6 @@ A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次
 
 ---
 
-**项目地址**: [GitHub Repository](#)
-**问题反馈**: [Issues](#)
+**项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)
+**问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)
+**NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)

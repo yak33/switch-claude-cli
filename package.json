@@ -20,16 +20,16 @@
     "provider",
     "third-party"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "yak33 <your.email@example.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/switch-claude-cli.git"
+    "url": "https://github.com/yak33/switch-claude-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/switch-claude-cli/issues"
+    "url": "https://github.com/yak33/switch-claude-cli/issues"
   },
-  "homepage": "https://github.com/yourusername/switch-claude-cli#readme",
+  "homepage": "https://github.com/yak33/switch-claude-cli#readme",
   "engines": {
     "node": ">=16.0.0"
   },
