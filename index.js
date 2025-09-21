@@ -132,7 +132,43 @@ function createExampleConfig() {
   }
 }
 
+function showWelcomeAndHelp() {
+  console.log(`🎉 欢迎使用 Switch Claude CLI！`);
+  console.log(`\n📚 Switch Claude CLI - Claude API Provider 切换工具
+
+用法:
+  switch-claude [选项] [编号]
+
+选项:
+  -h, --help          显示帮助信息
+  -r, --refresh       强制刷新缓存，重新检测所有 provider
+  -v, --verbose       显示详细的调试信息
+  -l, --list          只列出 providers 不启动 claude
+  -e, --env-only      只设置环境变量，不启动 claude
+  --add               添加新的 provider
+  --remove <编号>     删除指定编号的 provider
+  --set-default <编号> 设置指定编号的 provider 为默认
+  --clear-default     清除默认 provider（每次都需要手动选择）
+
+参数:
+  编号                直接选择指定编号的 provider（跳过交互选择）
+
+示例:
+  switch-claude           # 交互式选择
+  switch-claude 1         # 直接选择编号为 1 的 provider
+  switch-claude --refresh # 强制刷新缓存后选择
+  switch-claude -v 2      # 详细模式选择编号为 2 的 provider
+  switch-claude --list    # 只列出所有 providers
+  switch-claude --add     # 添加新的 provider
+  switch-claude --remove 2 # 删除编号为 2 的 provider
+  switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
+  switch-claude --clear-default  # 清除默认设置
+  switch-claude -e 1      # 只设置环境变量，不启动 claude`);
+}
+
 if (!fs.existsSync(configPath)) {
+  showWelcomeAndHelp();
+  console.log(`\n${'='.repeat(80)}`);
   console.log(`🔧 首次运行，正在初始化配置...`);
   ensureConfigDir();
 
@@ -482,9 +518,9 @@ async function main() {
 
     let statusText = "";
     if (isAvailable) {
-      statusText = `✅ [${i + 1}] ${p.name} 可用 (${testResult.status})`;
+      statusText = `✅ [${i + 1}] ${p.name} 可用`;
       if (verbose && testResult.responseTime) {
-        statusText += ` - ${testResult.responseTime}ms`;
+        statusText += ` (${testResult.status}) - ${testResult.responseTime}ms`;
       }
       if (fromCache) statusText += ' 📋';
     } else {
@@ -526,10 +562,17 @@ async function main() {
           type: "list",
           name: "provider",
           message: "请选择一个可用的 provider:",
-          choices: available.map((p, i) => ({
-            name: `[${providers.indexOf(p) + 1}] ${p.name} (${p.baseUrl})`,
-            value: p
-          }))
+          choices: available.map((p, i) => {
+            // 通过 name 和 baseUrl 找到原始索引
+            const originalIndex = providers.findIndex(provider =>
+              provider.name === p.name && provider.baseUrl === p.baseUrl
+            );
+            const displayIndex = originalIndex + 1;
+            return {
+              name: `[${displayIndex}] ${p.name} (${p.baseUrl})`,
+              value: p
+            };
+          })
         }
       ]);
       selected = answers.provider;

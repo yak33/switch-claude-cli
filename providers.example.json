@@ -3,7 +3,7 @@
     "name": "Provider1",
     "baseUrl": "https://api.example1.com",
     "key": "sk-your-api-key-here-replace-with-real-key",
-    "default": true
+    "default": false
   },
   {
     "name": "Provider2",
