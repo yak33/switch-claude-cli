@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Provider1",
+    "baseUrl": "https://api.example1.com",
+    "key": "sk-your-api-key-here-replace-with-real-key",
+    "default": true
+  },
+  {
+    "name": "Provider2",
+    "baseUrl": "https://api.example2.com",
+    "key": "cr_your-api-key-here-replace-with-real-key",
+    "default": false
+  },
+  {
+    "name": "Provider3",
+    "baseUrl": "https://claude.example3.com/api",
+    "key": "custom_your-api-key-here-replace-with-real-key",
+    "default": false
+  }
+]
