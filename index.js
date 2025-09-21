@@ -20,6 +20,40 @@ function ensureConfigDir() {
   }
 }
 
+function showWelcomeAndHelp() {
+  console.log(`🎉 欢迎使用 Switch Claude CLI！`);
+  console.log(`\n📚 Switch Claude CLI - Claude API Provider 切换工具
+
+用法:
+  switch-claude [选项] [编号]
+
+选项:
+  -h, --help          显示帮助信息
+  -r, --refresh       强制刷新缓存，重新检测所有 provider
+  -v, --verbose       显示详细的调试信息
+  -l, --list          只列出 providers 不启动 claude
+  -e, --env-only      只设置环境变量，不启动 claude
+  --add               添加新的 provider
+  --remove <编号>     删除指定编号的 provider
+  --set-default <编号> 设置指定编号的 provider 为默认
+  --clear-default     清除默认 provider（每次都需要手动选择）
+
+参数:
+  编号                直接选择指定编号的 provider（跳过交互选择）
+
+示例:
+  switch-claude           # 交互式选择
+  switch-claude 1         # 直接选择编号为 1 的 provider
+  switch-claude --refresh # 强制刷新缓存后选择
+  switch-claude -v 2      # 详细模式选择编号为 2 的 provider
+  switch-claude --list    # 只列出所有 providers
+  switch-claude --add     # 添加新的 provider
+  switch-claude --remove 2 # 删除编号为 2 的 provider
+  switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
+  switch-claude --clear-default  # 清除默认设置
+  switch-claude -e 1      # 只设置环境变量，不启动 claude`);
+}
+
 function loadCache() {
   try {
     if (!fs.existsSync(cacheFile)) return {};
@@ -94,7 +128,7 @@ function validateConfig(providers) {
   return true;
 }
 
-function createExampleConfig() {
+async function createExampleConfig() {
   const exampleConfig = [
     {
       "name": "Provider1",
@@ -113,18 +147,6 @@ function createExampleConfig() {
   try {
     fs.writeFileSync(configPath, JSON.stringify(exampleConfig, null, 2));
     console.log(`✅ 已创建示例配置文件: ${configPath}`);
-    console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
-
-    if (process.platform === 'win32') {
-      console.log(`   notepad "${configPath}"`);
-    } else if (process.platform === 'darwin') {
-      console.log(`   open "${configPath}"`);
-    } else {
-      console.log(`   nano "${configPath}"`);
-      console.log(`   或者 vim "${configPath}"`);
-    }
-
-    console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
     return true;
   } catch (error) {
     console.error(`❌ 创建配置文件失败: ${error.message}`);
@@ -132,66 +154,91 @@ function createExampleConfig() {
   }
 }
 
-function showWelcomeAndHelp() {
-  console.log(`🎉 欢迎使用 Switch Claude CLI！`);
-  console.log(`\n📚 Switch Claude CLI - Claude API Provider 切换工具
+async function interactiveSetup() {
+  console.log(`\n🚀 欢迎使用交互式配置向导！\n`);
+  console.log(`我们将帮你添加第一个 Claude API Provider。`);
+  console.log(`你可以稍后使用 --add 命令添加更多 provider。\n`);
 
-用法:
-  switch-claude [选项] [编号]
+  try {
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        name: "name",
+        message: "请输入 Provider 名称:",
+        default: "我的Claude服务",
+        validate: input => input.trim() ? true : "名称不能为空"
+      },
+      {
+        type: "input",
+        name: "baseUrl",
+        message: "请输入 API Base URL:",
+        default: "https://api.example.com",
+        validate: input => {
+          try {
+            new URL(input);
+            return true;
+          } catch {
+            return "请输入有效的 URL";
+          }
+        }
+      },
+      {
+        type: "input",
+        name: "key",
+        message: "请输入 API Key:",
+        validate: input => {
+          const trimmed = input.trim();
+          if (!trimmed) return "API Key 不能为空";
+          if (trimmed.length < 10) return "API Key 长度太短，请检查是否完整";
+          return true;
+        }
+      },
+      {
+        type: "confirm",
+        name: "continueSetup",
+        message: "配置完成！是否现在就开始使用?",
+        default: true
+      }
+    ]);
 
-选项:
-  -h, --help          显示帮助信息
-  -r, --refresh       强制刷新缓存，重新检测所有 provider
-  -v, --verbose       显示详细的调试信息
-  -l, --list          只列出 providers 不启动 claude
-  -e, --env-only      只设置环境变量，不启动 claude
-  --add               添加新的 provider
-  --remove <编号>     删除指定编号的 provider
-  --set-default <编号> 设置指定编号的 provider 为默认
-  --clear-default     清除默认 provider（每次都需要手动选择）
+    const newConfig = [{
+      name: answers.name.trim(),
+      baseUrl: answers.baseUrl.trim(),
+      key: answers.key.trim(),
+      default: true
+    }];
 
-参数:
-  编号                直接选择指定编号的 provider（跳过交互选择）
+    fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2));
+    console.log(`\n✅ 配置已保存到: ${configPath}`);
 
-示例:
-  switch-claude           # 交互式选择
-  switch-claude 1         # 直接选择编号为 1 的 provider
-  switch-claude --refresh # 强制刷新缓存后选择
-  switch-claude -v 2      # 详细模式选择编号为 2 的 provider
-  switch-claude --list    # 只列出所有 providers
-  switch-claude --add     # 添加新的 provider
-  switch-claude --remove 2 # 删除编号为 2 的 provider
-  switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
-  switch-claude --clear-default  # 清除默认设置
-  switch-claude -e 1      # 只设置环境变量，不启动 claude`);
-}
+    if (answers.continueSetup) {
+      console.log(`\n🎉 配置完成！现在开始检测 API 可用性...\n`);
+      return true; // 继续执行主程序
+    } else {
+      console.log(`\n💡 配置已完成，你可以随时运行 switch-claude 开始使用！`);
+      return false; // 退出程序
+    }
 
-if (!fs.existsSync(configPath)) {
-  showWelcomeAndHelp();
-  console.log(`\n${'='.repeat(80)}`);
-  console.log(`🔧 首次运行，正在初始化配置...`);
-  ensureConfigDir();
+  } catch (error) {
+    if (error.isTtyError || error.name === 'ExitPromptError') {
+      console.log(`\n\n⚠️  已取消配置。`);
+      console.log(`\n📝 你也可以手动编辑配置文件：`);
 
-  if (createExampleConfig()) {
-    process.exit(0);
-  } else {
-    process.exit(1);
+      if (process.platform === 'win32') {
+        console.log(`   notepad "${configPath}"`);
+      } else if (process.platform === 'darwin') {
+        console.log(`   open "${configPath}"`);
+      } else {
+        console.log(`   nano "${configPath}"`);
+      }
+
+      console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
+      return false;
+    } else {
+      console.error(`❌ 配置过程中出现错误: ${error.message}`);
+      return false;
+    }
   }
-}
-
-let providers;
-try {
-  const configContent = fs.readFileSync(configPath, "utf-8");
-  providers = JSON.parse(configContent);
-  validateConfig(providers);
-} catch (error) {
-  console.error("❌ 配置文件错误：");
-  if (error instanceof SyntaxError) {
-    console.error("JSON 格式错误，请检查文件语法");
-  } else {
-    console.error(error.message);
-  }
-  process.exit(1);
 }
 
 async function testProvider(baseUrl, key, retries = 2, verbose = false) {
@@ -295,18 +342,11 @@ async function main() {
   // 确保配置目录存在
   ensureConfigDir();
 
+  // 解析命令行参数
   const args = process.argv.slice(2);
-  const forceRefresh = args.includes('--refresh') || args.includes('-r');
-  const verbose = args.includes('--verbose') || args.includes('-v');
   const showHelp = args.includes('--help') || args.includes('-h');
-  const listProviders = args.includes('--list') || args.includes('-l');
-  const addProvider = args.includes('--add');
-  const removeProvider = args.includes('--remove');
-  const setDefault = args.includes('--set-default');
-  const clearDefault = args.includes('--clear-default');
-  const envOnly = args.includes('--env-only') || args.includes('-e');
-  const providerIndex = args.find(arg => !arg.startsWith('-') && !isNaN(parseInt(arg)));
 
+  // 如果是帮助命令，直接显示帮助并退出
   if (showHelp) {
     console.log(`
 📚 Switch Claude CLI - Claude API Provider 切换工具
@@ -342,6 +382,98 @@ async function main() {
 `);
     process.exit(0);
   }
+
+  // 首次运行检查
+  if (!fs.existsSync(configPath)) {
+    showWelcomeAndHelp();
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`🔧 首次运行，正在初始化配置...`);
+
+    // 询问用户是否使用交互式配置
+    try {
+      const { useInteractive } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "useInteractive",
+          message: "是否使用交互式配置向导? (推荐)",
+          default: true
+        }
+      ]);
+
+      if (useInteractive) {
+        const shouldContinue = await interactiveSetup();
+        if (!shouldContinue) {
+          process.exit(0);
+        }
+        // 如果用户选择继续，程序会继续执行主逻辑
+      } else {
+        // 用户选择手动配置
+        if (createExampleConfig()) {
+          console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
+
+          if (process.platform === 'win32') {
+            console.log(`   notepad "${configPath}"`);
+          } else if (process.platform === 'darwin') {
+            console.log(`   open "${configPath}"`);
+          } else {
+            console.log(`   nano "${configPath}"`);
+            console.log(`   或者 vim "${configPath}"`);
+          }
+
+          console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
+          process.exit(0);
+        } else {
+          process.exit(1);
+        }
+      }
+    } catch (error) {
+      // 如果交互式询问失败，回退到原来的方式
+      if (createExampleConfig()) {
+        console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
+
+        if (process.platform === 'win32') {
+          console.log(`   notepad "${configPath}"`);
+        } else if (process.platform === 'darwin') {
+          console.log(`   open "${configPath}"`);
+        } else {
+          console.log(`   nano "${configPath}"`);
+          console.log(`   或者 vim "${configPath}"`);
+        }
+
+        console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
+        process.exit(0);
+      } else {
+        process.exit(1);
+      }
+    }
+  }
+
+  // 加载配置文件
+  let providers;
+  try {
+    const configContent = fs.readFileSync(configPath, "utf-8");
+    providers = JSON.parse(configContent);
+    validateConfig(providers);
+  } catch (error) {
+    console.error("❌ 配置文件错误：");
+    if (error instanceof SyntaxError) {
+      console.error("JSON 格式错误，请检查文件语法");
+    } else {
+      console.error(error.message);
+    }
+    process.exit(1);
+  }
+
+  // 解析其他命令行参数
+  const forceRefresh = args.includes('--refresh') || args.includes('-r');
+  const verbose = args.includes('--verbose') || args.includes('-v');
+  const listProviders = args.includes('--list') || args.includes('-l');
+  const addProvider = args.includes('--add');
+  const removeProvider = args.includes('--remove');
+  const setDefault = args.includes('--set-default');
+  const clearDefault = args.includes('--clear-default');
+  const envOnly = args.includes('--env-only') || args.includes('-e');
+  const providerIndex = args.find(arg => !arg.startsWith('-') && !isNaN(parseInt(arg)));
 
   console.log("📋 可用的第三方列表：\n");
   providers.forEach((p, i) => {
