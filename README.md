@@ -30,19 +30,33 @@ npm link
 
 ## 🚀 快速开始
 
-### 1. 创建配置文件
-
-从示例配置文件开始：
+### 1. 安装后首次运行
 
 ```bash
-# 复制示例配置文件
-cp providers.example.json providers.json
-
-# 或者在 Windows 上：
-copy providers.example.json providers.json
+switch-claude
 ```
 
-然后编辑 `providers.json` 文件，替换为你的真实 API 信息：
+首次运行时，工具会自动：
+- 创建配置目录 `~/.switch-claude`
+- 生成示例配置文件 `~/.switch-claude/providers.json`
+- 提供编辑配置的命令
+
+### 2. 编辑配置文件
+
+根据提示编辑配置文件：
+
+```bash
+# Windows
+notepad "C:\Users\YourName\.switch-claude\providers.json"
+
+# macOS
+open ~/.switch-claude/providers.json
+
+# Linux
+nano ~/.switch-claude/providers.json
+```
+
+将示例内容替换为你的真实 API 信息：
 
 ```json
 [
@@ -60,9 +74,7 @@ copy providers.example.json providers.json
 ]
 ```
 
-⚠️ **重要**：`providers.json` 包含敏感信息，已被 `.gitignore` 忽略，不会提交到版本控制中。
-
-### 2. 运行工具
+### 3. 再次运行开始使用
 
 ```bash
 switch-claude
@@ -133,7 +145,20 @@ switch-claude --help
 | `--set-default <编号>` | | 设置指定编号的 provider 为默认 |
 | `--clear-default` | | 清除默认 provider（每次都需要手动选择） |
 
-## 📁 配置文件格式
+## 📁 配置文件位置
+
+### 配置目录结构
+
+```
+~/.switch-claude/
+├── providers.json    # API 配置文件
+└── cache.json       # 检测结果缓存
+```
+
+**配置目录位置**：
+- **Windows**: `C:\Users\YourName\.switch-claude\`
+- **macOS**: `/Users/YourName/.switch-claude/`
+- **Linux**: `/home/YourName/.switch-claude/`
 
 ### providers.json
 
@@ -148,14 +173,11 @@ switch-claude --help
 ]
 ```
 
-### 配置验证
-
-工具会自动验证配置文件：
-- ✅ JSON 格式正确性
-- ✅ 必需字段完整性
-- ✅ URL 格式有效性
-- ✅ Provider 名称唯一性
-- ✅ API Key 长度检查（至少10个字符）
+### 配置安全
+- **自动创建**：首次运行自动创建配置目录和示例文件
+- **用户目录**：配置文件存储在用户主目录下，避免权限问题
+- **API Key 保护**：显示时会被部分遮码（只显示前12位）
+- **缓存隔离**：每个用户的缓存文件独立存储
 
 ## 🎯 使用场景
 
@@ -246,20 +268,21 @@ claude
 ## 🔒 安全注意事项
 
 ### 配置文件安全
-- **敏感文件保护**：`providers.json` 和 `.switch-claude-cache.json` 已在 `.gitignore` 中被忽略
-- **示例配置**：使用 `providers.example.json` 作为配置模板
+- **用户目录隔离**：配置文件存储在 `~/.switch-claude/` 下，每个用户独立
+- **自动初始化**：首次运行自动创建配置目录和示例文件
 - **API Key 保护**：显示时会被部分遮码（只显示前12位）
 - **文件权限**：在 Unix 系统上建议设置适当的文件权限：
   ```bash
-  chmod 600 providers.json  # 仅所有者可读写
+  chmod 700 ~/.switch-claude          # 仅所有者可访问目录
+  chmod 600 ~/.switch-claude/*        # 仅所有者可读写文件
   ```
 
-### 开源项目安全
-- ✅ 真实 API Key 已从版本控制中排除
-- ✅ 缓存文件不会被提交
-- ✅ 提供安全的示例配置文件
-- ⚠️ **永远不要**将包含真实 API Key 的配置文件提交到版本控制
+### 数据安全
+- ✅ 配置文件存储在用户目录，不会影响其他用户
+- ✅ 缓存文件独立存储，避免冲突
+- ✅ 敏感信息不会记录到日志中
 - ⚠️ **定期轮换** API Key 以确保安全
+- ⚠️ **谨慎分享** 配置文件或截图
 
 ## 🤝 贡献
 

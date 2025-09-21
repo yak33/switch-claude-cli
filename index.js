@@ -2,12 +2,23 @@
 
 import fs from "fs";
 import path from "path";
+import os from "os";
 import inquirer from "inquirer";
 import { spawn } from "child_process";
 
-const configPath = path.resolve("providers.json");
-const cacheFile = path.resolve(".switch-claude-cache.json");
+// 配置目录和文件路径
+const configDir = path.join(os.homedir(), '.switch-claude');
+const configPath = path.join(configDir, 'providers.json');
+const cacheFile = path.join(configDir, 'cache.json');
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟
+
+// 确保配置目录存在
+function ensureConfigDir() {
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+    console.log(`✅ 已创建配置目录: ${configDir}`);
+  }
+}
 
 function loadCache() {
   try {
@@ -83,31 +94,53 @@ function validateConfig(providers) {
   return true;
 }
 
-if (!fs.existsSync(configPath)) {
-  console.error("❌ 找不到 providers.json 配置文件！");
-
-  // 检查是否存在示例文件
-  const examplePath = path.resolve("providers.example.json");
-  if (fs.existsSync(examplePath)) {
-    console.log("\n💡 检测到示例配置文件，你可以复制它：");
-    if (process.platform === 'win32') {
-      console.log("   copy providers.example.json providers.json");
-    } else {
-      console.log("   cp providers.example.json providers.json");
+function createExampleConfig() {
+  const exampleConfig = [
+    {
+      "name": "Provider1",
+      "baseUrl": "https://api.example1.com",
+      "key": "sk-your-api-key-here-replace-with-real-key",
+      "default": true
+    },
+    {
+      "name": "Provider2",
+      "baseUrl": "https://api.example2.com",
+      "key": "cr_your-api-key-here-replace-with-real-key",
+      "default": false
     }
-    console.log("\n然后编辑 providers.json 文件，替换为你的真实 API 信息。");
-  } else {
-    console.log("\n示例配置文件格式：");
-    console.log(JSON.stringify([
-      {
-        "name": "Provider1",
-        "baseUrl": "https://api.example.com",
-        "key": "your-api-key-here",
-        "default": true
-      }
-    ], null, 2));
+  ];
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(exampleConfig, null, 2));
+    console.log(`✅ 已创建示例配置文件: ${configPath}`);
+    console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
+
+    if (process.platform === 'win32') {
+      console.log(`   notepad "${configPath}"`);
+    } else if (process.platform === 'darwin') {
+      console.log(`   open "${configPath}"`);
+    } else {
+      console.log(`   nano "${configPath}"`);
+      console.log(`   或者 vim "${configPath}"`);
+    }
+
+    console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
+    return true;
+  } catch (error) {
+    console.error(`❌ 创建配置文件失败: ${error.message}`);
+    return false;
   }
-  process.exit(1);
+}
+
+if (!fs.existsSync(configPath)) {
+  console.log(`🔧 首次运行，正在初始化配置...`);
+  ensureConfigDir();
+
+  if (createExampleConfig()) {
+    process.exit(0);
+  } else {
+    process.exit(1);
+  }
 }
 
 let providers;
@@ -223,6 +256,9 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
 }
 
 async function main() {
+  // 确保配置目录存在
+  ensureConfigDir();
+
   const args = process.argv.slice(2);
   const forceRefresh = args.includes('--refresh') || args.includes('-r');
   const verbose = args.includes('--verbose') || args.includes('-v');
