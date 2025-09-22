@@ -1,12 +1,20 @@
 #!/usr/bin/env node
 
-import fs from "fs";
-import path from "path";
-import os from "os";
-import { fileURLToPath } from "url";
-import inquirer from "inquirer";
-import { spawn } from "child_process";
-import updateNotifier from "update-notifier";
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { fileURLToPath } from 'url';
+import inquirer from 'inquirer';
+import { spawn } from 'child_process';
+import updateNotifier from 'update-notifier';
+import {
+  recordCommand,
+  recordProviderUse,
+  recordError,
+  displayStats,
+  exportStats as exportStatsData,
+  resetStats,
+} from './lib/stats.js';
 
 // 获取当前模块的目录路径（ESM 模块需要这样处理）
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +27,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'ut
 const notifier = updateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 6, // 6小时
-  shouldNotifyInNpmScript: false
+  shouldNotifyInNpmScript: false,
 });
 
 // 配置目录和文件路径
@@ -30,7 +38,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5分钟
 
 // 进度显示工具
 class ProgressIndicator {
-  constructor(total, message = "正在处理") {
+  constructor(total, message = '正在处理') {
     this.total = total;
     this.completed = 0;
     this.message = message;
@@ -160,8 +168,8 @@ function showWelcomeAndHelp() {
 function loadCache() {
   try {
     if (!fs.existsSync(cacheFile)) return {};
-    const cache = JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
-    return cache.timestamp && (Date.now() - cache.timestamp < CACHE_DURATION) ? cache.results : {};
+    const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+    return cache.timestamp && Date.now() - cache.timestamp < CACHE_DURATION ? cache.results : {};
   } catch {
     return {};
   }
@@ -169,22 +177,25 @@ function loadCache() {
 
 function saveCache(results) {
   try {
-    fs.writeFileSync(cacheFile, JSON.stringify({
-      timestamp: Date.now(),
-      results: results
-    }));
+    fs.writeFileSync(
+      cacheFile,
+      JSON.stringify({
+        timestamp: Date.now(),
+        results: results,
+      })
+    );
   } catch (error) {
-    console.warn("⚠️ 缓存保存失败:", error.message);
+    console.warn('⚠️ 缓存保存失败:', error.message);
   }
 }
 
 function validateConfig(providers) {
   if (!Array.isArray(providers)) {
-    throw new Error("配置文件格式错误：providers 必须是数组");
+    throw new Error('配置文件格式错误：providers 必须是数组');
   }
 
   if (providers.length === 0) {
-    throw new Error("配置文件为空：至少需要一个 provider");
+    throw new Error('配置文件为空：至少需要一个 provider');
   }
 
   const errors = [];
@@ -234,17 +245,17 @@ function validateConfig(providers) {
 async function createExampleConfig() {
   const exampleConfig = [
     {
-      "name": "Provider1",
-      "baseUrl": "https://api.example1.com",
-      "key": "sk-your-api-key-here-replace-with-real-key",
-      "default": true
+      name: 'Provider1',
+      baseUrl: 'https://api.example1.com',
+      key: 'sk-your-api-key-here-replace-with-real-key',
+      default: true,
     },
     {
-      "name": "Provider2",
-      "baseUrl": "https://api.example2.com",
-      "key": "cr_your-api-key-here-replace-with-real-key",
-      "default": false
-    }
+      name: 'Provider2',
+      baseUrl: 'https://api.example2.com',
+      key: 'cr_your-api-key-here-replace-with-real-key',
+      default: false,
+    },
   ];
 
   try {
@@ -265,51 +276,53 @@ async function interactiveSetup() {
   try {
     const answers = await inquirer.prompt([
       {
-        type: "input",
-        name: "name",
-        message: "请输入 Provider 名称:",
-        default: "我的Claude服务",
-        validate: input => input.trim() ? true : "名称不能为空"
+        type: 'input',
+        name: 'name',
+        message: '请输入 Provider 名称:',
+        default: '我的Claude服务',
+        validate: (input) => (input.trim() ? true : '名称不能为空'),
       },
       {
-        type: "input",
-        name: "baseUrl",
-        message: "请输入 API Base URL:",
-        default: "https://api.example.com",
-        validate: input => {
+        type: 'input',
+        name: 'baseUrl',
+        message: '请输入 API Base URL:',
+        default: 'https://api.example.com',
+        validate: (input) => {
           try {
             new URL(input);
             return true;
           } catch {
-            return "请输入有效的 URL";
+            return '请输入有效的 URL';
           }
-        }
+        },
       },
       {
-        type: "input",
-        name: "key",
-        message: "请输入 API Key:",
-        validate: input => {
+        type: 'input',
+        name: 'key',
+        message: '请输入 API Key:',
+        validate: (input) => {
           const trimmed = input.trim();
-          if (!trimmed) return "API Key 不能为空";
-          if (trimmed.length < 10) return "API Key 长度太短，请检查是否完整";
+          if (!trimmed) return 'API Key 不能为空';
+          if (trimmed.length < 10) return 'API Key 长度太短，请检查是否完整';
           return true;
-        }
+        },
       },
       {
-        type: "confirm",
-        name: "continueSetup",
-        message: "配置完成！是否现在就开始使用?",
-        default: true
-      }
+        type: 'confirm',
+        name: 'continueSetup',
+        message: '配置完成！是否现在就开始使用?',
+        default: true,
+      },
     ]);
 
-    const newConfig = [{
-      name: answers.name.trim(),
-      baseUrl: answers.baseUrl.trim(),
-      key: answers.key.trim(),
-      default: true
-    }];
+    const newConfig = [
+      {
+        name: answers.name.trim(),
+        baseUrl: answers.baseUrl.trim(),
+        key: answers.key.trim(),
+        default: true,
+      },
+    ];
 
     fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2));
     console.log(`\n✅ 配置已保存到: ${configPath}`);
@@ -321,7 +334,6 @@ async function interactiveSetup() {
       console.log(`\n💡 配置已完成，你可以随时运行 switch-claude 开始使用！`);
       return false; // 退出程序
     }
-
   } catch (error) {
     if (error.isTtyError || error.name === 'ExitPromptError') {
       console.log(`\n\n⚠️  已取消配置。`);
@@ -347,8 +359,8 @@ async function interactiveSetup() {
 async function testProvider(baseUrl, key, retries = 2, verbose = false) {
   // 测试多种模型以支持不同类型的第三方服务
   const testModels = [
-    { model: "claude-sonnet-4-20250514", type: "Claude" },
-    { model: "gpt-5", type: "GPT" }
+    { model: 'claude-sonnet-4-20250514', type: 'Claude' },
+    { model: 'gpt-5', type: 'GPT' },
   ];
 
   const supportedModels = [];
@@ -367,22 +379,24 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         if (verbose) {
-          console.log(`    🌐 尝试 POST ${baseUrl}/v1/messages (${modelInfo.type}, 尝试 ${attempt + 1}/${retries + 1})`);
+          console.log(
+            `    🌐 尝试 POST ${baseUrl}/v1/messages (${modelInfo.type}, 尝试 ${attempt + 1}/${retries + 1})`
+          );
         }
 
         const options = {
           method: 'POST',
           headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json",
-            "User-Agent": "switch-claude-cli/1.0.0"
+            Authorization: `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'switch-claude-cli/1.0.0',
           },
           signal: controller.signal,
           body: JSON.stringify({
             model: modelInfo.model,
-            messages: [{ role: "user", content: "test" }],
-            max_tokens: 1
-          })
+            messages: [{ role: 'user', content: 'test' }],
+            max_tokens: 1,
+          }),
         };
 
         const res = await fetch(`${baseUrl}/v1/messages`, options);
@@ -405,6 +419,8 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
 
           if (isModelSupported) {
             supportedModels.push(modelInfo.type);
+            // 记录成功的响应时间
+            recordProviderUse(baseUrl, true, responseTime);
             if (verbose) {
               console.log(`    ✅ ${modelInfo.type} 模型支持`);
             }
@@ -420,13 +436,19 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
               endpoint: '/v1/messages',
               responseTime,
               supportedModels: [...supportedModels],
-              error: res.ok ? null :
-                     res.status === 401 ? '认证失败，请检查API Key' :
-                     res.status === 403 ? '权限不足，请检查API Key权限' :
-                     res.status === 429 ? '请求频率超限，服务可用' :
-                     res.status === 400 ? '请求参数错误，可能模型不支持' :
-                     res.status === 422 ? '模型不支持' :
-                     `HTTP ${res.status}: ${res.statusText}`
+              error: res.ok
+                ? null
+                : res.status === 401
+                  ? '认证失败，请检查API Key'
+                  : res.status === 403
+                    ? '权限不足，请检查API Key权限'
+                    : res.status === 429
+                      ? '请求频率超限，服务可用'
+                      : res.status === 400
+                        ? '请求参数错误，可能模型不支持'
+                        : res.status === 422
+                          ? '模型不支持'
+                          : `HTTP ${res.status}: ${res.statusText}`,
             };
           }
 
@@ -435,13 +457,17 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
         } else if (verbose) {
           console.log(`    ❌ 端点失败: ${res.status} ${res.statusText}`);
         }
-
       } catch (error) {
-        const errorMsg = error.name === 'AbortError' ? 'Timeout (8s)' :
-                        error.code === 'ENOTFOUND' ? 'DNS解析失败' :
-                        error.code === 'ECONNREFUSED' ? '连接被拒绝' :
-                        error.code === 'ETIMEDOUT' ? '连接超时' :
-                        error.message;
+        const errorMsg =
+          error.name === 'AbortError'
+            ? 'Timeout (8s)'
+            : error.code === 'ENOTFOUND'
+              ? 'DNS解析失败'
+              : error.code === 'ECONNREFUSED'
+                ? '连接被拒绝'
+                : error.code === 'ETIMEDOUT'
+                  ? '连接超时'
+                  : error.message;
 
         if (verbose) {
           console.log(`    ❌ 请求失败: ${errorMsg}`);
@@ -455,7 +481,7 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
             endpoint: '/v1/messages',
             responseTime: null,
             supportedModels: [],
-            error: errorMsg
+            error: errorMsg,
           };
         }
 
@@ -463,7 +489,7 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
           if (verbose) {
             console.log(`    ⏳ 等待1秒后重试...`);
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
     }
@@ -481,7 +507,7 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
     endpoint: '/v1/messages',
     responseTime: null,
     supportedModels: [],
-    error: 'All models failed'
+    error: 'All models failed',
   };
 }
 
@@ -495,7 +521,7 @@ async function exportConfig(outputPath) {
     }
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    
+
     // 如果没有指定输出路径，使用默认文件名
     if (!outputPath) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
@@ -506,7 +532,7 @@ async function exportConfig(outputPath) {
     const exportData = {
       version: pkg.version,
       exportTime: new Date().toISOString(),
-      providers: config
+      providers: config,
     };
 
     fs.writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
@@ -528,7 +554,7 @@ async function importConfig(inputPath, merge = false) {
     }
 
     const importData = JSON.parse(fs.readFileSync(inputPath, 'utf-8'));
-    
+
     // 验证导入数据格式
     let providersToImport;
     if (importData.providers && Array.isArray(importData.providers)) {
@@ -558,11 +584,11 @@ async function importConfig(inputPath, merge = false) {
     // 如果需要合并配置
     if (merge && fs.existsSync(configPath)) {
       const existingConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      const existingNames = new Set(existingConfig.map(p => p.name));
-      
+      const existingNames = new Set(existingConfig.map((p) => p.name));
+
       // 过滤重复的 provider
-      const newProviders = providersToImport.filter(p => !existingNames.has(p.name));
-      
+      const newProviders = providersToImport.filter((p) => !existingNames.has(p.name));
+
       if (newProviders.length === 0) {
         console.log('⚠️ 没有新的 provider 需要导入（所有名称都已存在）');
         return false;
@@ -582,13 +608,13 @@ async function importConfig(inputPath, merge = false) {
     // 写入新配置
     fs.writeFileSync(configPath, JSON.stringify(providersToImport, null, 2));
     console.log(`✅ 成功导入 ${providersToImport.length} 个 provider 配置`);
-    
+
     // 显示导入的 providers
     console.log('\n📋 导入的 Providers:');
     providersToImport.forEach((p, i) => {
       console.log(`  [${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
     });
-    
+
     return true;
   } catch (error) {
     console.error(`❌ 导入失败: ${error.message}`);
@@ -611,31 +637,32 @@ async function backupConfig() {
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const backupPath = path.join(backupDir, `backup-${timestamp}.json`);
-    
+
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const backupData = {
       version: pkg.version,
       backupTime: new Date().toISOString(),
-      providers: config
+      providers: config,
     };
 
     fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
     console.log(`✅ 配置已备份到: ${path.relative(configDir, backupPath)}`);
-    
+
     // 清理旧备份（保留最近10个）
-    const backups = fs.readdirSync(backupDir)
-      .filter(f => f.startsWith('backup-') && f.endsWith('.json'))
+    const backups = fs
+      .readdirSync(backupDir)
+      .filter((f) => f.startsWith('backup-') && f.endsWith('.json'))
       .sort()
       .reverse();
-    
+
     if (backups.length > 10) {
       const toDelete = backups.slice(10);
-      toDelete.forEach(file => {
+      toDelete.forEach((file) => {
         fs.unlinkSync(path.join(backupDir, file));
       });
       console.log(`🗑️ 已清理 ${toDelete.length} 个旧备份文件`);
     }
-    
+
     return true;
   } catch (error) {
     console.error(`❌ 备份失败: ${error.message}`);
@@ -652,8 +679,9 @@ async function listBackups() {
       return;
     }
 
-    const backups = fs.readdirSync(backupDir)
-      .filter(f => f.startsWith('backup-') && f.endsWith('.json'))
+    const backups = fs
+      .readdirSync(backupDir)
+      .filter((f) => f.startsWith('backup-') && f.endsWith('.json'))
       .sort()
       .reverse();
 
@@ -667,7 +695,7 @@ async function listBackups() {
       const filePath = path.join(backupDir, file);
       const stats = fs.statSync(filePath);
       const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      
+
       console.log(`[${index + 1}] ${file}`);
       console.log(`    📅 备份时间: ${new Date(data.backupTime).toLocaleString('zh-CN')}`);
       console.log(`    📦 包含 ${data.providers.length} 个 provider`);
@@ -689,25 +717,29 @@ async function main() {
   notifier.notify({
     isGlobal: true,
     defer: false, // 立即显示，不延迟到进程结束
-    message: '🚀 发现新版本 {latestVersion}，当前版本 {currentVersion}\n' +
-             '运行以下命令更新：\n' +
-             'npm update -g {packageName}\n' +
-             '或者：\n' + 
-             'npm install -g {packageName}@latest',
+    message:
+      '🚀 发现新版本 {latestVersion}，当前版本 {currentVersion}\n' +
+      '运行以下命令更新：\n' +
+      'npm update -g {packageName}\n' +
+      '或者：\n' +
+      'npm install -g {packageName}@latest',
     boxenOptions: {
       padding: 1,
       margin: 1,
       align: 'center',
       borderColor: 'yellow',
-      borderStyle: 'round'
-    }
+      borderStyle: 'round',
+    },
   });
 
   // 解析命令行参数
   const args = process.argv.slice(2);
   const showHelp = args.includes('--help') || args.includes('-h');
   const showVersion = args.includes('--version') || args.includes('-V');
-  
+  const showStats = args.includes('--stats');
+  const exportStats = args.includes('--export-stats');
+  const resetStatsFlag = args.includes('--reset-stats');
+
   // 配置备份和导入相关参数
   const exportConfig_ = args.includes('--export');
   const importConfig_ = args.includes('--import');
@@ -715,10 +747,49 @@ async function main() {
   const listBackups_ = args.includes('--list-backups');
   const mergeImport = args.includes('--merge');
 
+  // 统计相关命令
+  if (showStats) {
+    recordCommand('--stats');
+    const verbose = args.includes('-v') || args.includes('--verbose');
+    displayStats(verbose);
+    process.exit(0);
+  }
+
+  if (exportStats) {
+    recordCommand('--export-stats');
+    const exportIndex = args.indexOf('--export-stats');
+    const outputPath =
+      args[exportIndex + 1] && !args[exportIndex + 1].startsWith('-')
+        ? args[exportIndex + 1]
+        : `stats-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.json`;
+    exportStatsData(outputPath);
+    process.exit(0);
+  }
+
+  if (resetStatsFlag) {
+    recordCommand('--reset-stats');
+    const answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirmReset',
+        message: '确定要重置所有统计数据吗？',
+        default: false,
+      },
+    ]);
+
+    if (answers.confirmReset) {
+      resetStats();
+    } else {
+      console.log('已取消重置');
+    }
+    process.exit(0);
+  }
+
   // 如果是版本命令，显示版本信息
   if (showVersion) {
+    recordCommand('--version');
     console.log(`switch-claude-cli v${pkg.version}`);
-    
+
     // 主动检查一次更新
     const update = await notifier.fetchInfo();
     if (update && update.latest !== pkg.version) {
@@ -735,6 +806,7 @@ async function main() {
 
   // 如果是帮助命令，直接显示帮助并退出
   if (showHelp) {
+    recordCommand('--help');
     console.log(`
 📚 Switch Claude CLI - Claude API Provider 切换工具 (v${pkg.version})
 
@@ -758,6 +830,9 @@ async function main() {
   --merge             导入时合并而不是替换（与 --import 配合使用）
   --backup            备份当前配置
   --list-backups      列出所有备份
+  --stats             显示使用统计
+  --export-stats [文件名] 导出统计数据
+  --reset-stats       重置统计数据
 
 参数:
   编号                直接选择指定编号的 provider（跳过交互选择）
@@ -783,13 +858,31 @@ async function main() {
     process.exit(0);
   }
 
+  // 记录命令使用
+  let commandUsed = 'default';
+  if (exportConfig_) commandUsed = '--export';
+  else if (importConfig_) commandUsed = '--import';
+  else if (backupConfig_) commandUsed = '--backup';
+  else if (listBackups_) commandUsed = '--list-backups';
+  else if (addProvider) commandUsed = '--add';
+  else if (removeProvider) commandUsed = '--remove';
+  else if (setDefault) commandUsed = '--set-default';
+  else if (clearDefault) commandUsed = '--clear-default';
+  else if (checkUpdate) commandUsed = '--check-update';
+  else if (listProviders) commandUsed = '--list';
+  else if (envOnly) commandUsed = '--env-only';
+  else if (providerIndex) commandUsed = 'direct-select';
+
+  recordCommand(commandUsed);
+
   // 处理导出配置
   if (exportConfig_) {
     // 查找 --export 后面的参数作为输出文件名
     const exportIndex = args.indexOf('--export');
-    const outputPath = args[exportIndex + 1] && !args[exportIndex + 1].startsWith('-') 
-      ? args[exportIndex + 1] 
-      : null;
+    const outputPath =
+      args[exportIndex + 1] && !args[exportIndex + 1].startsWith('-')
+        ? args[exportIndex + 1]
+        : null;
     const success = await exportConfig(outputPath);
     process.exit(success ? 0 : 1);
   }
@@ -798,13 +891,13 @@ async function main() {
   if (importConfig_) {
     const importIndex = args.indexOf('--import');
     const inputPath = args[importIndex + 1];
-    
+
     if (!inputPath || inputPath.startsWith('-')) {
       console.error('❌ 请指定要导入的文件路径');
       console.log('💡 用法: switch-claude --import <文件路径>');
       process.exit(1);
     }
-    
+
     const success = await importConfig(inputPath, mergeImport);
     process.exit(success ? 0 : 1);
   }
@@ -831,11 +924,11 @@ async function main() {
     try {
       const { useInteractive } = await inquirer.prompt([
         {
-          type: "confirm",
-          name: "useInteractive",
-          message: "是否使用交互式配置向导? (推荐)",
-          default: true
-        }
+          type: 'confirm',
+          name: 'useInteractive',
+          message: '是否使用交互式配置向导? (推荐)',
+          default: true,
+        },
       ]);
 
       if (useInteractive) {
@@ -889,13 +982,13 @@ async function main() {
   // 加载配置文件
   let providers;
   try {
-    const configContent = fs.readFileSync(configPath, "utf-8");
+    const configContent = fs.readFileSync(configPath, 'utf-8');
     providers = JSON.parse(configContent);
     validateConfig(providers);
   } catch (error) {
-    console.error("❌ 配置文件错误：");
+    console.error('❌ 配置文件错误：');
     if (error instanceof SyntaxError) {
-      console.error("JSON 格式错误，请检查文件语法");
+      console.error('JSON 格式错误，请检查文件语法');
     } else {
       console.error(error.message);
     }
@@ -912,13 +1005,13 @@ async function main() {
   const clearDefault = args.includes('--clear-default');
   const envOnly = args.includes('--env-only') || args.includes('-e');
   const checkUpdate = args.includes('--check-update');
-  const providerIndex = args.find(arg => !arg.startsWith('-') && !isNaN(parseInt(arg)));
+  const providerIndex = args.find((arg) => !arg.startsWith('-') && !isNaN(parseInt(arg)));
 
   // 如果是检查更新命令
   if (checkUpdate) {
     console.log('🔍 正在检查更新...');
     const update = await notifier.fetchInfo();
-    
+
     if (update && update.latest !== pkg.version) {
       console.log(`\n🎉 发现新版本！`);
       console.log(`📌 当前版本: v${pkg.version}`);
@@ -926,7 +1019,7 @@ async function main() {
       if (update.time && update.time[update.latest]) {
         console.log(`📅 发布时间: ${new Date(update.time[update.latest]).toLocaleString('zh-CN')}`);
       }
-      
+
       // 尝试获取更新说明
       if (update.latest) {
         console.log(`\n💡 更新方法：`);
@@ -940,9 +1033,9 @@ async function main() {
     process.exit(0);
   }
 
-  console.log("📋 可用的第三方列表：\n");
+  console.log('📋 可用的第三方列表：\n');
   providers.forEach((p, i) => {
-    console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? " ⭐默认" : ""}`);
+    console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
   });
 
   // 处理配置管理命令
@@ -953,52 +1046,52 @@ async function main() {
   if (addProvider) {
     const answers = await inquirer.prompt([
       {
-        type: "input",
-        name: "name",
-        message: "Provider 名称:",
-        validate: input => input.trim() ? true : "名称不能为空"
+        type: 'input',
+        name: 'name',
+        message: 'Provider 名称:',
+        validate: (input) => (input.trim() ? true : '名称不能为空'),
       },
       {
-        type: "input",
-        name: "baseUrl",
-        message: "API Base URL:",
-        validate: input => {
+        type: 'input',
+        name: 'baseUrl',
+        message: 'API Base URL:',
+        validate: (input) => {
           try {
             new URL(input);
             return true;
           } catch {
-            return "请输入有效的 URL";
+            return '请输入有效的 URL';
           }
-        }
+        },
       },
       {
-        type: "input",
-        name: "key",
-        message: "API Key:",
-        validate: input => {
+        type: 'input',
+        name: 'key',
+        message: 'API Key:',
+        validate: (input) => {
           const trimmed = input.trim();
-          if (!trimmed) return "API Key 不能为空";
-          if (trimmed.length < 10) return "API Key 长度太短，请检查是否完整";
+          if (!trimmed) return 'API Key 不能为空';
+          if (trimmed.length < 10) return 'API Key 长度太短，请检查是否完整';
           return true;
-        }
+        },
       },
       {
-        type: "confirm",
-        name: "setAsDefault",
-        message: "设置为默认 provider?",
-        default: providers.length === 0  // 如果是第一个 provider，默认设为默认
-      }
+        type: 'confirm',
+        name: 'setAsDefault',
+        message: '设置为默认 provider?',
+        default: providers.length === 0, // 如果是第一个 provider，默认设为默认
+      },
     ]);
 
     const newProvider = {
       name: answers.name.trim(),
       baseUrl: answers.baseUrl.trim(),
       key: answers.key.trim(),
-      default: answers.setAsDefault
+      default: answers.setAsDefault,
     };
 
     if (answers.setAsDefault) {
-      providers.forEach(p => p.default = false);
+      providers.forEach((p) => (p.default = false));
     }
 
     providers.push(newProvider);
@@ -1014,7 +1107,7 @@ async function main() {
   }
 
   if (removeProvider) {
-    const index = parseInt(providerIndex, 10) - 1;  // 转换为 0-based index
+    const index = parseInt(providerIndex, 10) - 1; // 转换为 0-based index
     if (isNaN(index) || index < 0 || index >= providers.length) {
       console.error(`\n❌ 无效的编号: ${providerIndex}`);
       process.exit(1);
@@ -1034,13 +1127,13 @@ async function main() {
   }
 
   if (setDefault) {
-    const index = parseInt(providerIndex, 10) - 1;  // 转换为 0-based index
+    const index = parseInt(providerIndex, 10) - 1; // 转换为 0-based index
     if (isNaN(index) || index < 0 || index >= providers.length) {
       console.error(`\n❌ 无效的编号: ${providerIndex}`);
       process.exit(1);
     }
 
-    providers.forEach((p, i) => p.default = (i === index));
+    providers.forEach((p, i) => (p.default = i === index));
 
     try {
       fs.writeFileSync(configPath, JSON.stringify(providers, null, 2));
@@ -1053,7 +1146,7 @@ async function main() {
   }
 
   if (clearDefault) {
-    providers.forEach(p => p.default = false);
+    providers.forEach((p) => (p.default = false));
 
     try {
       fs.writeFileSync(configPath, JSON.stringify(providers, null, 2));
@@ -1073,7 +1166,7 @@ async function main() {
   let testResults = [];
 
   if (hasCachedResults && !forceRefresh) {
-    console.log("\n💾 使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n");
+    console.log('\n💾 使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n');
 
     // 对于缓存结果，直接返回
     testResults = providers.map((p) => {
@@ -1084,11 +1177,11 @@ async function main() {
     // 需要进行检测时，显示进度
     if (!verbose) {
       // 非详细模式下显示进度条
-      progress = new ProgressIndicator(providers.length, "正在检测 API 可用性");
+      progress = new ProgressIndicator(providers.length, '正在检测 API 可用性');
       progress.start();
     } else {
       // 详细模式下显示传统信息
-      console.log("\n🔍 正在并行检测可用性...\n");
+      console.log('\n🔍 正在并行检测可用性...\n');
     }
 
     const testPromises = providers.map(async (p, i) => {
@@ -1115,9 +1208,12 @@ async function main() {
 
       // 更新进度
       if (progress) {
-        const modelInfo = result.supportedModels && result.supportedModels.length > 0
-          ? `(${result.supportedModels.join(', ')})`
-          : result.available ? '(可达)' : '';
+        const modelInfo =
+          result.supportedModels && result.supportedModels.length > 0
+            ? `(${result.supportedModels.join(', ')})`
+            : result.available
+              ? '(可达)'
+              : '';
         progress.update(`${p.name}${modelInfo}`);
       }
 
@@ -1146,7 +1242,7 @@ async function main() {
     const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
     const fromCache = cache[cacheKey] && !forceRefresh;
 
-    let statusText = "";
+    let statusText = '';
     if (isAvailable) {
       statusText = `✅ [${i + 1}] ${p.name} 可用`;
 
@@ -1168,17 +1264,17 @@ async function main() {
     return { ...p, ok: isAvailable, testResult };
   });
 
-  const available = results.filter(p => p.ok);
+  const available = results.filter((p) => p.ok);
 
   if (available.length === 0) {
-    console.error("\n🚨 没有可用的服务！");
+    console.error('\n🚨 没有可用的服务！');
     process.exit(1);
   }
 
   let selected;
 
   if (providerIndex !== undefined) {
-    const index = parseInt(providerIndex, 10) - 1;  // 转换为 0-based index
+    const index = parseInt(providerIndex, 10) - 1; // 转换为 0-based index
     if (!isNaN(index) && index >= 0 && results[index] && results[index].ok) {
       selected = results[index];
       console.log(`\n👉 已通过编号选择: ${selected.name} (${selected.baseUrl})`);
@@ -1187,7 +1283,7 @@ async function main() {
       process.exit(1);
     }
   } else {
-    const defaultProvider = results.find(p => p.default && p.ok);
+    const defaultProvider = results.find((p) => p.default && p.ok);
     if (defaultProvider) {
       selected = defaultProvider;
       console.log(`\n⭐ 已自动选择默认 provider: ${selected.name} (${selected.baseUrl})`);
@@ -1195,21 +1291,21 @@ async function main() {
       // 没有默认 provider，总是显示交互式选择
       const answers = await inquirer.prompt([
         {
-          type: "list",
-          name: "provider",
-          message: "请选择一个可用的 provider:",
+          type: 'list',
+          name: 'provider',
+          message: '请选择一个可用的 provider:',
           choices: available.map((p, i) => {
             // 通过 name 和 baseUrl 找到原始索引
-            const originalIndex = providers.findIndex(provider =>
-              provider.name === p.name && provider.baseUrl === p.baseUrl
+            const originalIndex = providers.findIndex(
+              (provider) => provider.name === p.name && provider.baseUrl === p.baseUrl
             );
             const displayIndex = originalIndex + 1;
             return {
               name: `[${displayIndex}] ${p.name} (${p.baseUrl})`,
-              value: p
+              value: p,
             };
-          })
-        }
+          }),
+        },
       ]);
       selected = answers.provider;
     }
@@ -1219,6 +1315,9 @@ async function main() {
   process.env.ANTHROPIC_AUTH_TOKEN = selected.key;
 
   console.log(`\n✅ 已切换到: ${selected.name} (${selected.baseUrl})`);
+
+  // 记录使用统计
+  recordProviderUse(selected.name, true, selected.testResult?.responseTime);
   console.log(`\n🔧 环境变量已设置:`);
   console.log(`   ANTHROPIC_BASE_URL=${selected.baseUrl}`);
   console.log(`   ANTHROPIC_AUTH_TOKEN=${selected.key.slice(0, 12)}...`);
@@ -1235,14 +1334,14 @@ async function main() {
   // 尝试启动 claude
   console.log(`\n🚀 正在启动 Claude Code...`);
 
-  const child = spawn("claude", [], {
-    stdio: "inherit",
+  const child = spawn('claude', [], {
+    stdio: 'inherit',
     env: process.env,
-    shell: true  // 在 Windows 上更好地处理命令
+    shell: true, // 在 Windows 上更好地处理命令
   });
 
-  child.on("error", (error) => {
-    if (error.code === "ENOENT") {
+  child.on('error', (error) => {
+    if (error.code === 'ENOENT') {
       console.error(`\n❌ 找不到 'claude' 命令！`);
       console.log(`\n💡 解决方案：`);
       console.log(`   1. 确保 Claude Code 已正确安装`);
@@ -1253,7 +1352,7 @@ async function main() {
       console.log(`      claude`);
       console.log(`\n🔍 当前 PATH 包含的目录：`);
       const paths = process.env.PATH.split(process.platform === 'win32' ? ';' : ':');
-      paths.slice(0, 5).forEach(p => console.log(`   - ${p}`));
+      paths.slice(0, 5).forEach((p) => console.log(`   - ${p}`));
       if (paths.length > 5) {
         console.log(`   ... 还有 ${paths.length - 5} 个目录`);
       }
@@ -1263,7 +1362,7 @@ async function main() {
     process.exit(1);
   });
 
-  child.on("exit", (code) => {
+  child.on('exit', (code) => {
     if (code !== 0 && code !== null) {
       console.log(`\n⚠️  Claude Code 退出，退出码: ${code}`);
     }

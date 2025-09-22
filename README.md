@@ -48,6 +48,7 @@ switch-claude
 ```
 
 首次运行时，工具会自动：
+
 - 创建配置目录 `~/.switch-claude`
 - 生成示例配置文件 `~/.switch-claude/providers.json`
 - 提供编辑配置的命令
@@ -161,6 +162,7 @@ switch-claude --list-backups
 ```
 
 **功能特点**：
+
 - 🔒 导入前自动备份原配置
 - 🔄 支持合并导入，避免覆盖现有配置
 - 📅 导出文件包含版本和时间信息
@@ -180,6 +182,7 @@ switch-claude --check-update
 ```
 
 **自动更新提醒**：
+
 - 🔔 每次运行时自动检查是否有新版本（每6小时检查一次）
 - 📦 如果有新版本，会显示醒目的黄色边框提示
 - 🚀 提供便捷的更新命令
@@ -193,24 +196,24 @@ switch-claude --help
 
 ## 🔧 命令行选项
 
-| 选项 | 简写 | 描述 |
-|------|------|------|
-| `--help` | `-h` | 显示帮助信息 |
-| `--version` | `-V` | 显示版本信息并检查更新 |
-| `--refresh` | `-r` | 强制刷新缓存，重新检测所有 provider |
-| `--verbose` | `-v` | 显示详细的调试信息 |
-| `--list` | `-l` | 只列出 providers 不启动 claude |
-| `--env-only` | `-e` | 只设置环境变量，不启动 claude |
-| `--add` | | 添加新的 provider |
-| `--remove <编号>` | | 删除指定编号的 provider |
-| `--set-default <编号>` | | 设置指定编号的 provider 为默认 |
-| `--clear-default` | | 清除默认 provider（每次都需要手动选择） |
-| `--check-update` | | 手动检查版本更新 |
-| `--export [文件名]` | | 导出配置到文件 |
-| `--import <文件名>` | | 从文件导入配置 |
-| `--merge` | | 与 --import 配合使用，合并而不是替换 |
-| `--backup` | | 备份当前配置到系统目录 |
-| `--list-backups` | | 列出所有备份文件 |
+| 选项                   | 简写 | 描述                                    |
+| ---------------------- | ---- | --------------------------------------- |
+| `--help`               | `-h` | 显示帮助信息                            |
+| `--version`            | `-V` | 显示版本信息并检查更新                  |
+| `--refresh`            | `-r` | 强制刷新缓存，重新检测所有 provider     |
+| `--verbose`            | `-v` | 显示详细的调试信息                      |
+| `--list`               | `-l` | 只列出 providers 不启动 claude          |
+| `--env-only`           | `-e` | 只设置环境变量，不启动 claude           |
+| `--add`                |      | 添加新的 provider                       |
+| `--remove <编号>`      |      | 删除指定编号的 provider                 |
+| `--set-default <编号>` |      | 设置指定编号的 provider 为默认          |
+| `--clear-default`      |      | 清除默认 provider（每次都需要手动选择） |
+| `--check-update`       |      | 手动检查版本更新                        |
+| `--export [文件名]`    |      | 导出配置到文件                          |
+| `--import <文件名>`    |      | 从文件导入配置                          |
+| `--merge`              |      | 与 --import 配合使用，合并而不是替换    |
+| `--backup`             |      | 备份当前配置到系统目录                  |
+| `--list-backups`       |      | 列出所有备份文件                        |
 
 ## 📁 配置文件位置
 
@@ -226,6 +229,7 @@ switch-claude --help
 ```
 
 **配置目录位置**：
+
 - **Windows**: `C:\Users\YourName\.switch-claude\`
 - **macOS**: `/Users/YourName/.switch-claude/`
 - **Linux**: `/home/YourName/.switch-claude/`
@@ -235,15 +239,16 @@ switch-claude --help
 ```json
 [
   {
-    "name": "Provider名称",           // 必需：显示名称
-    "baseUrl": "https://api.url",     // 必需：API Base URL
-    "key": "your-api-key",            // 必需：API Key（支持各种格式）
-    "default": true                   // 可选：是否为默认 provider
+    "name": "Provider名称", // 必需：显示名称
+    "baseUrl": "https://api.url", // 必需：API Base URL
+    "key": "your-api-key", // 必需：API Key（支持各种格式）
+    "default": true // 可选：是否为默认 provider
   }
 ]
 ```
 
 ### 配置安全
+
 - **自动创建**：首次运行自动创建配置目录和示例文件
 - **用户目录**：配置文件存储在用户主目录下，避免权限问题
 - **API Key 保护**：显示时会被部分遮码（只显示前12位）
@@ -254,16 +259,19 @@ switch-claude --help
 ### 场景一：有稳定的主要 Provider
 
 1. 设置一个默认 provider：
+
 ```bash
 switch-claude --set-default 1
 ```
 
 2. 日常使用（自动选择默认）：
+
 ```bash
 switch-claude
 ```
 
 3. 临时切换到其他 provider：
+
 ```bash
 switch-claude 2
 ```
@@ -271,11 +279,13 @@ switch-claude 2
 ### 场景二：经常切换 Provider
 
 1. 清除默认设置：
+
 ```bash
 switch-claude --clear-default
 ```
 
 2. 每次运行都会显示选择界面：
+
 ```bash
 switch-claude
 ```
@@ -283,11 +293,13 @@ switch-claude
 ### 场景三：调试和测试
 
 1. 详细模式查看所有信息：
+
 ```bash
 switch-claude -v --refresh
 ```
 
 2. 只设置环境变量，手动运行 claude：
+
 ```bash
 switch-claude -e 1
 claude
@@ -319,6 +331,7 @@ claude
 1. **检查安装**：确保 Claude Code 已正确安装
 2. **检查 PATH**：确保 claude 命令在系统 PATH 中
 3. **使用 --env-only**：
+
 ```bash
 switch-claude -e 1
 # 然后手动运行
@@ -338,6 +351,7 @@ claude
 ## 🔒 安全注意事项
 
 ### 配置文件安全
+
 - **用户目录隔离**：配置文件存储在 `~/.switch-claude/` 下，每个用户独立
 - **自动初始化**：首次运行自动创建配置目录和示例文件
 - **API Key 保护**：显示时会被部分遮码（只显示前12位）
@@ -348,11 +362,43 @@ claude
   ```
 
 ### 数据安全
+
 - ✅ 配置文件存储在用户目录，不会影响其他用户
 - ✅ 缓存文件独立存储，避免冲突
 - ✅ 敏感信息不会记录到日志中
 - ⚠️ **定期轮换** API Key 以确保安全
 - ⚠️ **谨慎分享** 配置文件或截图
+
+## 🔧 开发
+
+### 代码规范
+
+```bash
+# 运行 ESLint 检查
+npm run lint
+
+# 自动修复 ESLint 问题
+npm run lint:fix
+
+# 运行 Prettier 格式化
+npm run format
+
+# 检查 Prettier 格式
+npm run format:check
+```
+
+### 测试
+
+```bash
+# 运行所有测试
+npm test
+
+# 观察模式
+npm run test:watch
+
+# 测试覆盖率
+npm run test:coverage
+```
 
 ## 🤝 贡献
 
@@ -365,24 +411,31 @@ MIT License
 ## 🆘 常见问题
 
 ### Q: 如何添加新的 provider？
+
 A: 使用 `switch-claude --add` 命令，按提示输入信息。
 
 ### Q: 如何备份配置？
+
 A: 有多种方式：
-   - 使用 `switch-claude --export` 导出到文件
-   - 使用 `switch-claude --backup` 自动备份到系统目录
-   - 手动复制 `~/.switch-claude/providers.json` 文件
+
+- 使用 `switch-claude --export` 导出到文件
+- 使用 `switch-claude --backup` 自动备份到系统目录
+- 手动复制 `~/.switch-claude/providers.json` 文件
 
 ### Q: 工具支持哪些平台？
+
 A: 支持 Windows、macOS 和 Linux。
 
 ### Q: 如何更新工具？
+
 A: 工具会自动提醒你更新！你也可以：
-   - 运行 `switch-claude --version` 查看是否有新版本
-   - 运行 `switch-claude --check-update` 手动检查更新
-   - 使用 `npm update -g switch-claude-cli` 更新到最新版本
+
+- 运行 `switch-claude --version` 查看是否有新版本
+- 运行 `switch-claude --check-update` 手动检查更新
+- 使用 `npm update -g switch-claude-cli` 更新到最新版本
 
 ### Q: 缓存文件可以删除吗？
+
 A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次运行会重新检测。
 
 ---

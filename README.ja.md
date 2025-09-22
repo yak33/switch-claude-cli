@@ -42,6 +42,7 @@ switch-claude
 ```
 
 初回実行時、ツールは自動的に以下を行います:
+
 - `~/.switch-claude` に設定ディレクトリを作成します。
 - `~/.switch-claude/providers.json` に設定ファイルの例を生成します。
 - 設定ファイルを編集するためのコマンドを提供します。
@@ -138,17 +139,17 @@ switch-claude --help
 
 ## 🔧 コマンドラインオプション
 
-| オプション | エイリアス | 説明 |
-|---|---|---|
-| `--help` | `-h` | ヘルプ情報を表示します |
-| `--refresh` | `-r` | キャッシュを強制更新し、すべてのプロバイダーを再チェックします |
-| `--verbose` | `-v` | 詳細なデバッグ情報を表示します |
-| `--list` | `-l` | claude CLIを起動せずにプロバイダーを一覧表示します |
-| `--env-only` | `-e` | 環境変数を設定するだけで、claude CLIは起動しません |
-| `--add` | | 新しいプロバイダーを追加します |
-| `--remove <番号>` | | 番号で指定したプロバイダーを削除します |
-| `--set-default <番号>` | | 番号で指定したプロバイダーをデフォルトに設定します |
-| `--clear-default` | | デフォルトのプロバイダー設定をクリアします |
+| オプション             | エイリアス | 説明                                                           |
+| ---------------------- | ---------- | -------------------------------------------------------------- |
+| `--help`               | `-h`       | ヘルプ情報を表示します                                         |
+| `--refresh`            | `-r`       | キャッシュを強制更新し、すべてのプロバイダーを再チェックします |
+| `--verbose`            | `-v`       | 詳細なデバッグ情報を表示します                                 |
+| `--list`               | `-l`       | claude CLIを起動せずにプロバイダーを一覧表示します             |
+| `--env-only`           | `-e`       | 環境変数を設定するだけで、claude CLIは起動しません             |
+| `--add`                |            | 新しいプロバイダーを追加します                                 |
+| `--remove <番号>`      |            | 番号で指定したプロバイダーを削除します                         |
+| `--set-default <番号>` |            | 番号で指定したプロバイダーをデフォルトに設定します             |
+| `--clear-default`      |            | デフォルトのプロバイダー設定をクリアします                     |
 
 ## 📁 設定ファイル
 
@@ -161,6 +162,7 @@ switch-claude --help
 ```
 
 **設定ディレクトリの場所**:
+
 - **Windows**: `C:\Users\YourName\.switch-claude\`
 - **macOS**: `/Users/YourName/.switch-claude/`
 - **Linux**: `/home/YourName/.switch-claude/`
@@ -170,10 +172,10 @@ switch-claude --help
 ```json
 [
   {
-    "name": "ProviderName",        // 必須: 表示名
-    "baseUrl": "https://api.url",  // 必須: APIベースURL
-    "key": "your-api-key",         // 必須: APIキー（様々な形式をサポート）
-    "default": true                // オプション: デフォルトプロバイダーとして設定
+    "name": "ProviderName", // 必須: 表示名
+    "baseUrl": "https://api.url", // 必須: APIベースURL
+    "key": "your-api-key", // 必須: APIキー（様々な形式をサポート）
+    "default": true // オプション: デフォルトプロバイダーとして設定
   }
 ]
 ```
@@ -183,11 +185,13 @@ switch-claude --help
 ### シナリオ1: 安定したメインプロバイダーがある場合
 
 1.  デフォルトプロバイダーを設定:
+
     ```bash
     switch-claude --set-default 1
     ```
 
 2.  日常的な使用（デフォルトを自動選択）:
+
     ```bash
     switch-claude
     ```
@@ -200,6 +204,7 @@ switch-claude --help
 ### シナリオ2: 頻繁にプロバイダーを切り替える場合
 
 1.  デフォルト設定をクリア:
+
     ```bash
     switch-claude --clear-default
     ```
@@ -212,6 +217,7 @@ switch-claude --help
 ### シナリオ3: デバッグとテスト
 
 1.  詳細モードですべての情報を確認:
+
     ```bash
     switch-claude -v --refresh
     ```
@@ -287,21 +293,26 @@ IssueやPull Requestを歓迎します！
 ## 🆘 よくある質問 (FAQ)
 
 ### Q: 新しいプロバイダーを追加するには？
+
 A: `switch-claude --add` コマンドを使用し、プロンプトに従ってください。
 
 ### Q: 設定をバックアップするには？
+
 A: `~/.switch-claude/providers.json` ファイルをコピーするだけです。
 
 ### Q: どのプラットフォームをサポートしていますか？
+
 A: Windows, macOS, Linuxをサポートしています。
 
 ### Q: ツールを更新するには？
+
 A: `npm update -g switch-claude-cli`（グローバルインストールの場合）または `git pull && npm install`（ソースからインストールした場合）を使用してください。
 
 ### Q: キャッシュファイルは削除しても大丈夫ですか？
+
 A: はい、安全です。`cache.json` を削除すると、次回実行時に可用性チェックが再度実行されるだけです。
 
---- 
+---
 
 **プロジェクトリポジトリ**: [GitHub](https://github.com/yak33/switch-claude-cli)
 **問題を報告**: [Issues](https://github.com/yak33/switch-claude-cli/issues)

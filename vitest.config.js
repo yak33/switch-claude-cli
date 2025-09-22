@@ -12,10 +12,10 @@ export default defineConfig({
         'test/',
         '*.config.js',
         'coverage/',
-        'index.js' // 主文件暂时排除，因为它包含太多交互逻辑
-      ]
+        'index.js', // 主文件暂时排除，因为它包含太多交互逻辑
+      ],
     },
     testTimeout: 10000,
-    hookTimeout: 10000
-  }
+    hookTimeout: 10000,
+  },
 });

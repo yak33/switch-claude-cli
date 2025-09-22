@@ -42,6 +42,7 @@ switch-claude
 ```
 
 On the first run, the tool will automatically:
+
 - Create a configuration directory at `~/.switch-claude`
 - Generate an example configuration file at `~/.switch-claude/providers.json`
 - Provide the command to edit the configuration file.
@@ -138,17 +139,17 @@ switch-claude --help
 
 ## 🔧 Command-line Options
 
-| Option | Alias | Description |
-|---|---|---|
-| `--help` | `-h` | Show help information |
-| `--refresh` | `-r` | Force cache refresh and re-check all providers |
-| `--verbose` | `-v` | Display detailed debugging information |
-| `--list` | `-l` | List providers without starting the claude CLI |
-| `--env-only` | `-e` | Only set environment variables, do not start the claude CLI |
-| `--add` | | Add a new provider |
-| `--remove <number>` | | Remove a provider by its number |
-| `--set-default <number>` | | Set a provider as the default by its number |
-| `--clear-default` | | Clear the default provider setting |
+| Option                   | Alias | Description                                                 |
+| ------------------------ | ----- | ----------------------------------------------------------- |
+| `--help`                 | `-h`  | Show help information                                       |
+| `--refresh`              | `-r`  | Force cache refresh and re-check all providers              |
+| `--verbose`              | `-v`  | Display detailed debugging information                      |
+| `--list`                 | `-l`  | List providers without starting the claude CLI              |
+| `--env-only`             | `-e`  | Only set environment variables, do not start the claude CLI |
+| `--add`                  |       | Add a new provider                                          |
+| `--remove <number>`      |       | Remove a provider by its number                             |
+| `--set-default <number>` |       | Set a provider as the default by its number                 |
+| `--clear-default`        |       | Clear the default provider setting                          |
 
 ## 📁 Configuration Files
 
@@ -161,6 +162,7 @@ switch-claude --help
 ```
 
 **Configuration Directory Location**:
+
 - **Windows**: `C:\Users\YourName\.switch-claude\`
 - **macOS**: `/Users/YourName/.switch-claude/`
 - **Linux**: `/home/YourName/.switch-claude/`
@@ -170,10 +172,10 @@ switch-claude --help
 ```json
 [
   {
-    "name": "ProviderName",        // Required: Display name
-    "baseUrl": "https://api.url",  // Required: API Base URL
-    "key": "your-api-key",         // Required: API Key (supports various formats)
-    "default": true                // Optional: Set as the default provider
+    "name": "ProviderName", // Required: Display name
+    "baseUrl": "https://api.url", // Required: API Base URL
+    "key": "your-api-key", // Required: API Key (supports various formats)
+    "default": true // Optional: Set as the default provider
   }
 ]
 ```
@@ -183,11 +185,13 @@ switch-claude --help
 ### Scenario 1: You have a stable, primary provider
 
 1.  Set a default provider:
+
     ```bash
     switch-claude --set-default 1
     ```
 
 2.  Daily use (automatically selects the default):
+
     ```bash
     switch-claude
     ```
@@ -200,6 +204,7 @@ switch-claude --help
 ### Scenario 2: You frequently switch between providers
 
 1.  Clear the default setting:
+
     ```bash
     switch-claude --clear-default
     ```
@@ -212,6 +217,7 @@ switch-claude --help
 ### Scenario 3: Debugging and testing
 
 1.  Use verbose mode to see all details:
+
     ```bash
     switch-claude -v --refresh
     ```
