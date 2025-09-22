@@ -18,6 +18,7 @@
 - 📊 **详细日志**：可选的详细模式显示响应时间和错误信息
 - 🛡️ **错误处理**：完善的错误处理和用户友好的提示信息
 - 🔔 **版本更新**：v1.3.0 新增！自动提醒用户更新到最新版本
+- 📦 **配置备份**：v1.3.0 新增！支持导出、导入、备份和恢复配置
 
 ## 📦 安装
 
@@ -135,6 +136,35 @@ switch-claude --set-default 1
 switch-claude --clear-default
 ```
 
+### 配置备份与恢复 📦 v1.3.0
+
+```bash
+# 导出配置到文件（自动添加时间戳）
+switch-claude --export
+
+# 导出到指定文件
+switch-claude --export my-providers.json
+
+# 从文件导入配置（替换现有配置）
+switch-claude --import backup.json
+
+# 导入并合并（不会覆盖已有的同名 provider）
+switch-claude --import new-providers.json --merge
+
+# 备份到系统目录（~/.switch-claude/backups/）
+switch-claude --backup
+
+# 查看所有备份
+switch-claude --list-backups
+```
+
+**功能特点**：
+- 🔒 导入前自动备份原配置
+- 🔄 支持合并导入，避免覆盖现有配置
+- 📅 导出文件包含版本和时间信息
+- 🗑️ 自动清理旧备份（保留最近10个）
+- 📁 备份存储在 `~/.switch-claude/backups/` 目录
+
 ### 版本更新 🆕 v1.3.0
 
 ```bash
@@ -174,6 +204,11 @@ switch-claude --help
 | `--set-default <编号>` | | 设置指定编号的 provider 为默认 |
 | `--clear-default` | | 清除默认 provider（每次都需要手动选择） |
 | `--check-update` | | 手动检查版本更新 |
+| `--export [文件名]` | | 导出配置到文件 |
+| `--import <文件名>` | | 从文件导入配置 |
+| `--merge` | | 与 --import 配合使用，合并而不是替换 |
+| `--backup` | | 备份当前配置到系统目录 |
+| `--list-backups` | | 列出所有备份文件 |
 
 ## 📁 配置文件位置
 
@@ -182,7 +217,10 @@ switch-claude --help
 ```
 ~/.switch-claude/
 ├── providers.json    # API 配置文件
-└── cache.json       # 检测结果缓存
+├── cache.json       # 检测结果缓存
+└── backups/         # 备份文件目录
+    ├── backup-2024-09-22T10-30-00.json
+    └── backup-2024-09-22T14-15-30.json
 ```
 
 **配置目录位置**：
@@ -328,7 +366,10 @@ MIT License
 A: 使用 `switch-claude --add` 命令，按提示输入信息。
 
 ### Q: 如何备份配置？
-A: 直接复制 `providers.json` 文件即可。
+A: 有多种方式：
+   - 使用 `switch-claude --export` 导出到文件
+   - 使用 `switch-claude --backup` 自动备份到系统目录
+   - 手动复制 `~/.switch-claude/providers.json` 文件
 
 ### Q: 工具支持哪些平台？
 A: 支持 Windows、macOS 和 Linux。

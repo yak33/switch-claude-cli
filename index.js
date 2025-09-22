@@ -136,6 +136,10 @@ function showWelcomeAndHelp() {
   --set-default <编号> 设置指定编号的 provider 为默认
   --clear-default     清除默认 provider（每次都需要手动选择）
   --check-update      手动检查版本更新
+  --export [文件名]   导出配置到文件
+  --import <文件名>   从文件导入配置
+  --backup            备份当前配置
+  --list-backups      列出所有备份
 
 参数:
   编号                直接选择指定编号的 provider（跳过交互选择）
@@ -481,6 +485,202 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
   };
 }
 
+// 导出配置到文件
+async function exportConfig(outputPath) {
+  try {
+    if (!fs.existsSync(configPath)) {
+      console.error('❌ 配置文件不存在');
+      console.log('💡 请先运行 switch-claude 创建配置');
+      return false;
+    }
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 如果没有指定输出路径，使用默认文件名
+    if (!outputPath) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      outputPath = `switch-claude-backup-${timestamp}.json`;
+    }
+
+    // 添加元数据
+    const exportData = {
+      version: pkg.version,
+      exportTime: new Date().toISOString(),
+      providers: config
+    };
+
+    fs.writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
+    console.log(`✅ 配置已导出到: ${path.resolve(outputPath)}`);
+    console.log(`📋 包含 ${config.length} 个 provider 配置`);
+    return true;
+  } catch (error) {
+    console.error(`❌ 导出失败: ${error.message}`);
+    return false;
+  }
+}
+
+// 从文件导入配置
+async function importConfig(inputPath, merge = false) {
+  try {
+    if (!fs.existsSync(inputPath)) {
+      console.error(`❌ 文件不存在: ${inputPath}`);
+      return false;
+    }
+
+    const importData = JSON.parse(fs.readFileSync(inputPath, 'utf-8'));
+    
+    // 验证导入数据格式
+    let providersToImport;
+    if (importData.providers && Array.isArray(importData.providers)) {
+      // 新格式（包含元数据）
+      providersToImport = importData.providers;
+      console.log(`📄 导入文件版本: v${importData.version || 'unknown'}`);
+      if (importData.exportTime) {
+        console.log(`📅 导出时间: ${new Date(importData.exportTime).toLocaleString('zh-CN')}`);
+      }
+    } else if (Array.isArray(importData)) {
+      // 旧格式（纯数组）
+      providersToImport = importData;
+    } else {
+      console.error('❌ 无效的配置文件格式');
+      return false;
+    }
+
+    // 验证配置内容
+    try {
+      validateConfig(providersToImport);
+    } catch (error) {
+      console.error('❌ 配置验证失败:');
+      console.error(error.message);
+      return false;
+    }
+
+    // 如果需要合并配置
+    if (merge && fs.existsSync(configPath)) {
+      const existingConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const existingNames = new Set(existingConfig.map(p => p.name));
+      
+      // 过滤重复的 provider
+      const newProviders = providersToImport.filter(p => !existingNames.has(p.name));
+      
+      if (newProviders.length === 0) {
+        console.log('⚠️ 没有新的 provider 需要导入（所有名称都已存在）');
+        return false;
+      }
+
+      console.log(`🔄 合并模式: 将添加 ${newProviders.length} 个新 provider`);
+      providersToImport = [...existingConfig, ...newProviders];
+    }
+
+    // 备份现有配置
+    if (fs.existsSync(configPath)) {
+      const backupPath = `${configPath}.backup-${Date.now()}`;
+      fs.copyFileSync(configPath, backupPath);
+      console.log(`📦 已备份原配置到: ${path.basename(backupPath)}`);
+    }
+
+    // 写入新配置
+    fs.writeFileSync(configPath, JSON.stringify(providersToImport, null, 2));
+    console.log(`✅ 成功导入 ${providersToImport.length} 个 provider 配置`);
+    
+    // 显示导入的 providers
+    console.log('\n📋 导入的 Providers:');
+    providersToImport.forEach((p, i) => {
+      console.log(`  [${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`❌ 导入失败: ${error.message}`);
+    return false;
+  }
+}
+
+// 自动备份配置
+async function backupConfig() {
+  try {
+    if (!fs.existsSync(configPath)) {
+      console.error('❌ 配置文件不存在，无需备份');
+      return false;
+    }
+
+    const backupDir = path.join(configDir, 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const backupPath = path.join(backupDir, `backup-${timestamp}.json`);
+    
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const backupData = {
+      version: pkg.version,
+      backupTime: new Date().toISOString(),
+      providers: config
+    };
+
+    fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
+    console.log(`✅ 配置已备份到: ${path.relative(configDir, backupPath)}`);
+    
+    // 清理旧备份（保留最近10个）
+    const backups = fs.readdirSync(backupDir)
+      .filter(f => f.startsWith('backup-') && f.endsWith('.json'))
+      .sort()
+      .reverse();
+    
+    if (backups.length > 10) {
+      const toDelete = backups.slice(10);
+      toDelete.forEach(file => {
+        fs.unlinkSync(path.join(backupDir, file));
+      });
+      console.log(`🗑️ 已清理 ${toDelete.length} 个旧备份文件`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`❌ 备份失败: ${error.message}`);
+    return false;
+  }
+}
+
+// 列出所有备份
+async function listBackups() {
+  try {
+    const backupDir = path.join(configDir, 'backups');
+    if (!fs.existsSync(backupDir)) {
+      console.log('📭 没有找到备份文件');
+      return;
+    }
+
+    const backups = fs.readdirSync(backupDir)
+      .filter(f => f.startsWith('backup-') && f.endsWith('.json'))
+      .sort()
+      .reverse();
+
+    if (backups.length === 0) {
+      console.log('📭 没有找到备份文件');
+      return;
+    }
+
+    console.log('📚 可用的备份文件:\n');
+    backups.forEach((file, index) => {
+      const filePath = path.join(backupDir, file);
+      const stats = fs.statSync(filePath);
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      
+      console.log(`[${index + 1}] ${file}`);
+      console.log(`    📅 备份时间: ${new Date(data.backupTime).toLocaleString('zh-CN')}`);
+      console.log(`    📦 包含 ${data.providers.length} 个 provider`);
+      console.log(`    💾 文件大小: ${(stats.size / 1024).toFixed(2)} KB`);
+      console.log('');
+    });
+
+    console.log(`💡 使用 switch-claude --import <备份文件路径> 恢复配置`);
+  } catch (error) {
+    console.error(`❌ 列出备份失败: ${error.message}`);
+  }
+}
+
 async function main() {
   // 确保配置目录存在
   ensureConfigDir();
@@ -507,6 +707,13 @@ async function main() {
   const args = process.argv.slice(2);
   const showHelp = args.includes('--help') || args.includes('-h');
   const showVersion = args.includes('--version') || args.includes('-V');
+  
+  // 配置备份和导入相关参数
+  const exportConfig_ = args.includes('--export');
+  const importConfig_ = args.includes('--import');
+  const backupConfig_ = args.includes('--backup');
+  const listBackups_ = args.includes('--list-backups');
+  const mergeImport = args.includes('--merge');
 
   // 如果是版本命令，显示版本信息
   if (showVersion) {
@@ -546,6 +753,11 @@ async function main() {
   --set-default <编号> 设置指定编号的 provider 为默认
   --clear-default     清除默认 provider（每次都需要手动选择）
   --check-update      手动检查版本更新
+  --export [文件名]   导出配置到文件
+  --import <文件名>   从文件导入配置
+  --merge             导入时合并而不是替换（与 --import 配合使用）
+  --backup            备份当前配置
+  --list-backups      列出所有备份
 
 参数:
   编号                直接选择指定编号的 provider（跳过交互选择）
@@ -561,7 +773,51 @@ async function main() {
   switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
   switch-claude --clear-default  # 清除默认设置
   switch-claude -e 1      # 只设置环境变量，不启动 claude
+  switch-claude --export  # 导出配置到带时间戳的文件
+  switch-claude --export my-config.json # 导出到指定文件
+  switch-claude --import backup.json # 导入配置（替换）
+  switch-claude --import backup.json --merge # 导入配置（合并）
+  switch-claude --backup  # 备份当前配置
+  switch-claude --list-backups # 查看所有备份
 `);
+    process.exit(0);
+  }
+
+  // 处理导出配置
+  if (exportConfig_) {
+    // 查找 --export 后面的参数作为输出文件名
+    const exportIndex = args.indexOf('--export');
+    const outputPath = args[exportIndex + 1] && !args[exportIndex + 1].startsWith('-') 
+      ? args[exportIndex + 1] 
+      : null;
+    const success = await exportConfig(outputPath);
+    process.exit(success ? 0 : 1);
+  }
+
+  // 处理导入配置
+  if (importConfig_) {
+    const importIndex = args.indexOf('--import');
+    const inputPath = args[importIndex + 1];
+    
+    if (!inputPath || inputPath.startsWith('-')) {
+      console.error('❌ 请指定要导入的文件路径');
+      console.log('💡 用法: switch-claude --import <文件路径>');
+      process.exit(1);
+    }
+    
+    const success = await importConfig(inputPath, mergeImport);
+    process.exit(success ? 0 : 1);
+  }
+
+  // 处理备份配置
+  if (backupConfig_) {
+    const success = await backupConfig();
+    process.exit(success ? 0 : 1);
+  }
+
+  // 处理列出备份
+  if (listBackups_) {
+    await listBackups();
     process.exit(0);
   }
 
