@@ -112,6 +112,7 @@ pids
 test-config.json
 *.test.js
 NPM_PUBLISH.md
+PUBLISH.md
 SECURITY.md
 providers.json
 .switch-claude-cache.json
