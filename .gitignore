@@ -13,6 +13,7 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+coverage-final.json
 
 # nyc test coverage
 .nyc_output
@@ -141,3 +142,7 @@ Thumbs.db
 # Local development files
 local/
 dev/
+
+# Test files
+test-*.json
+*.test.json

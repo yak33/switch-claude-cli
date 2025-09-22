@@ -31,6 +31,14 @@
 - 🔔 更新提示使用醒目的黄色边框
 - 💡 提供多种更新方式（npm update 或 npm install）
 
+#### ✅ **测试套件**
+- 使用 Vitest 作为测试框架
+- 添加全面的单元测试（34 个测试用例）
+- 测试覆盖率达到 95.62%
+- 支持测试观察模式和 UI 模式
+- 添加 GitHub Actions CI/CD 工作流
+- 支持多平台和多 Node.js 版本测试
+
 ### 🔧 技术细节
 - 添加 `update-notifier` 依赖（54个子包）
 - 使用 ESM 模块的 `import.meta.url` 获取当前目录

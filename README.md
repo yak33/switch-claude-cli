@@ -1,6 +1,8 @@
 # Switch Claude CLI
 
 [![npm version](https://badge.fury.io/js/switch-claude-cli.svg)](https://www.npmjs.com/package/switch-claude-cli)
+[![Tests](https://github.com/yak33/switch-claude-cli/actions/workflows/test.yml/badge.svg)](https://github.com/yak33/switch-claude-cli/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-95.62%25-brightgreen)]()
 [![GitHub license](https://img.shields.io/github/license/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/issues)
 [![GitHub stars](https://img.shields.io/github/stars/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/stargazers)
