@@ -968,7 +968,7 @@ async function main() {
           process.exit(1);
         }
       }
-    } catch (error) {
+    } catch {
       // 如果交互式询问失败，回退到原来的方式
       if (createExampleConfig()) {
         console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
@@ -1413,7 +1413,7 @@ async function main() {
         }
       }
     }
-  } catch (_error) {
+  } catch {
     // 如果解析失败，尝试使用默认路径
     const defaultClaudePath =
       process.platform === 'win32'
