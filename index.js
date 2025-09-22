@@ -12,6 +12,87 @@ const configPath = path.join(configDir, 'providers.json');
 const cacheFile = path.join(configDir, 'cache.json');
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟
 
+// 进度显示工具
+class ProgressIndicator {
+  constructor(total, message = "正在处理") {
+    this.total = total;
+    this.completed = 0;
+    this.message = message;
+    this.spinners = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
+    this.spinnerIndex = 0;
+    this.completedItems = [];
+    this.interval = null;
+    this.lastLine = '';
+  }
+
+  start() {
+    if (process.stdout.isTTY) {
+      this.interval = setInterval(() => {
+        this.render();
+      }, 100);
+    }
+    this.render();
+  }
+
+  update(completedItem = null) {
+    if (completedItem) {
+      this.completedItems.push(completedItem);
+    }
+    this.completed++;
+    this.render();
+  }
+
+  render() {
+    const spinner = this.spinners[this.spinnerIndex % this.spinners.length];
+    this.spinnerIndex++;
+
+    let line = `🔍 ${this.message}... ${spinner} [${this.completed}/${this.total}]`;
+
+    if (this.completedItems.length > 0) {
+      const recentItems = this.completedItems.slice(-3).join(', ');
+      if (this.completedItems.length > 3) {
+        line += ` 已完成: ...${recentItems}`;
+      } else {
+        line += ` 已完成: ${recentItems}`;
+      }
+    }
+
+    if (process.stdout.isTTY) {
+      // TTY环境：清除上一行并打印新行
+      if (this.lastLine) {
+        process.stdout.write('\r' + ' '.repeat(this.lastLine.length) + '\r');
+      }
+      process.stdout.write(line);
+      this.lastLine = line;
+    } else {
+      // 非TTY环境：每2个完成项显示一次状态
+      if (this.completed % 2 === 0 || this.completed === this.total) {
+        console.log(line);
+      }
+    }
+  }
+
+  finish(finalMessage = null) {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+
+    if (process.stdout.isTTY) {
+      // TTY环境：清除进度行
+      process.stdout.write('\r' + ' '.repeat(this.lastLine.length) + '\r');
+      if (finalMessage) {
+        console.log(finalMessage);
+      }
+    } else {
+      // 非TTY环境：显示完成信息
+      if (finalMessage) {
+        console.log(finalMessage);
+      }
+    }
+  }
+}
+
 // 确保配置目录存在
 function ensureConfigDir() {
   if (!fs.existsSync(configDir)) {
@@ -242,41 +323,47 @@ async function interactiveSetup() {
 }
 
 async function testProvider(baseUrl, key, retries = 2, verbose = false) {
-  const testEndpoints = [
-    { path: '/v1/models', method: 'GET', body: null },
-    { path: '/v1/messages', method: 'POST', body: {
-      model: "claude-sonnet-4-20250514",
-      messages: [{ role: "user", content: "test" }],
-      max_tokens: 1
-    }}
+  // 测试多种模型以支持不同类型的第三方服务
+  const testModels = [
+    { model: "claude-sonnet-4-20250514", type: "Claude" },
+    { model: "gpt-5", type: "GPT" }
   ];
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    for (const endpoint of testEndpoints) {
+  const supportedModels = [];
+  let bestResult = null;
+
+  // 测试每种模型
+  for (const modelInfo of testModels) {
+    if (verbose) {
+      console.log(`    🔍 测试 ${modelInfo.type} 模型: ${modelInfo.model}`);
+    }
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const startTime = Date.now();
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         if (verbose) {
-          console.log(`    🌐 尝试 ${endpoint.method} ${baseUrl}${endpoint.path} (尝试 ${attempt + 1}/${retries + 1})`);
+          console.log(`    🌐 尝试 POST ${baseUrl}/v1/messages (${modelInfo.type}, 尝试 ${attempt + 1}/${retries + 1})`);
         }
 
         const options = {
-          method: endpoint.method,
+          method: 'POST',
           headers: {
             "Authorization": `Bearer ${key}`,
             "Content-Type": "application/json",
             "User-Agent": "switch-claude-cli/1.0.0"
           },
-          signal: controller.signal
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: modelInfo.model,
+            messages: [{ role: "user", content: "test" }],
+            max_tokens: 1
+          })
         };
 
-        if (endpoint.body) {
-          options.body = JSON.stringify(endpoint.body);
-        }
-
-        const res = await fetch(`${baseUrl}${endpoint.path}`, options);
+        const res = await fetch(`${baseUrl}/v1/messages`, options);
         clearTimeout(timeoutId);
         const responseTime = Date.now() - startTime;
 
@@ -284,17 +371,46 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
           console.log(`    ⏱️  响应时间: ${responseTime}ms, 状态: ${res.status} ${res.statusText}`);
         }
 
-        if (res.ok || res.status === 401) {
-          return {
-            available: res.ok,
-            status: res.status,
-            endpoint: endpoint.path,
-            responseTime,
-            error: res.ok ? null : `HTTP ${res.status}: ${res.statusText}`
-          };
-        }
+        // 扩展状态码处理：200/400/401/403/422/429 都说明服务可达
+        // 200: 成功
+        // 400: 请求错误（可能是模型不支持但服务可达）
+        // 401: API Key 问题，但服务可用
+        // 403: 权限问题，但服务可用
+        // 422: 模型不支持，但服务可用
+        // 429: 限流，但服务可用
+        if (res.ok || [400, 401, 403, 422, 429].includes(res.status)) {
+          const isModelSupported = res.ok;
 
-        if (verbose && !res.ok) {
+          if (isModelSupported) {
+            supportedModels.push(modelInfo.type);
+            if (verbose) {
+              console.log(`    ✅ ${modelInfo.type} 模型支持`);
+            }
+          } else if (verbose) {
+            console.log(`    ❌ ${modelInfo.type} 模型不支持 (${res.status})`);
+          }
+
+          // 记录最好的结果（优先选择成功的）
+          if (!bestResult || res.ok) {
+            bestResult = {
+              available: true,
+              status: res.status,
+              endpoint: '/v1/messages',
+              responseTime,
+              supportedModels: [...supportedModels],
+              error: res.ok ? null :
+                     res.status === 401 ? '认证失败，请检查API Key' :
+                     res.status === 403 ? '权限不足，请检查API Key权限' :
+                     res.status === 429 ? '请求频率超限，服务可用' :
+                     res.status === 400 ? '请求参数错误，可能模型不支持' :
+                     res.status === 422 ? '模型不支持' :
+                     `HTTP ${res.status}: ${res.statusText}`
+            };
+          }
+
+          // 如果成功了就跳到下一个模型
+          if (res.ok) break;
+        } else if (verbose) {
           console.log(`    ❌ 端点失败: ${res.status} ${res.statusText}`);
         }
 
@@ -309,12 +425,14 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
           console.log(`    ❌ 请求失败: ${errorMsg}`);
         }
 
-        if (attempt === retries && endpoint === testEndpoints[testEndpoints.length - 1]) {
+        // 如果是最后一次尝试且没有任何成功结果，返回错误
+        if (attempt === retries && !bestResult) {
           return {
             available: false,
             status: null,
-            endpoint: endpoint.path,
+            endpoint: '/v1/messages',
             responseTime: null,
+            supportedModels: [],
             error: errorMsg
           };
         }
@@ -329,12 +447,19 @@ async function testProvider(baseUrl, key, retries = 2, verbose = false) {
     }
   }
 
+  // 返回最好的结果，如果没有任何成功就返回失败
+  if (bestResult) {
+    bestResult.supportedModels = supportedModels;
+    return bestResult;
+  }
+
   return {
     available: false,
     status: null,
-    endpoint: 'all',
+    endpoint: '/v1/messages',
     responseTime: null,
-    error: 'All endpoints failed'
+    supportedModels: [],
+    error: 'All models failed'
   };
 }
 
@@ -604,35 +729,68 @@ async function main() {
   const cacheKeys = Object.keys(cache);
   const hasCachedResults = cacheKeys.length > 0;
 
+  let progress = null;
+  let testResults = [];
+
   if (hasCachedResults && !forceRefresh) {
     console.log("\n💾 使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n");
-  } else {
-    console.log("\n🔍 正在并行检测可用性...\n");
-  }
 
-  const testPromises = providers.map(async (p, i) => {
-    const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
-    if (cache[cacheKey] && !forceRefresh) {
-      if (verbose) {
-        console.log(`🔍 [${i + 1}] ${p.name}: 使用缓存结果`);
-      }
+    // 对于缓存结果，直接返回
+    testResults = providers.map((p) => {
+      const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
       return cache[cacheKey];
+    });
+  } else {
+    // 需要进行检测时，显示进度
+    if (!verbose) {
+      // 非详细模式下显示进度条
+      progress = new ProgressIndicator(providers.length, "正在检测 API 可用性");
+      progress.start();
+    } else {
+      // 详细模式下显示传统信息
+      console.log("\n🔍 正在并行检测可用性...\n");
     }
 
-    if (verbose) {
-      console.log(`🔍 [${i + 1}] ${p.name}: 开始检测...`);
+    const testPromises = providers.map(async (p, i) => {
+      const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+      if (cache[cacheKey] && !forceRefresh) {
+        if (verbose) {
+          console.log(`🔍 [${i + 1}] ${p.name}: 使用缓存结果`);
+        }
+        if (progress) {
+          progress.update(p.name);
+        }
+        return cache[cacheKey];
+      }
+
+      if (verbose) {
+        console.log(`🔍 [${i + 1}] ${p.name}: 开始检测...`);
+      }
+
+      const result = await testProvider(p.baseUrl, p.key, 2, verbose);
+
+      if (verbose) {
+        console.log(`🔍 [${i + 1}] ${p.name}: 检测完成 - ${result.available ? '可用' : '不可用'}`);
+      }
+
+      // 更新进度
+      if (progress) {
+        const modelInfo = result.supportedModels && result.supportedModels.length > 0
+          ? `(${result.supportedModels.join(', ')})`
+          : result.available ? '(可达)' : '';
+        progress.update(`${p.name}${modelInfo}`);
+      }
+
+      return result;
+    });
+
+    testResults = await Promise.all(testPromises);
+
+    // 完成进度显示
+    if (progress) {
+      progress.finish();
     }
-
-    const result = await testProvider(p.baseUrl, p.key, 2, verbose);
-
-    if (verbose) {
-      console.log(`🔍 [${i + 1}] ${p.name}: 检测完成 - ${result.available ? '可用' : '不可用'}`);
-    }
-
-    return result;
-  });
-
-  const testResults = await Promise.all(testPromises);
+  }
 
   // 更新缓存
   const newCache = {};
@@ -651,8 +809,14 @@ async function main() {
     let statusText = "";
     if (isAvailable) {
       statusText = `✅ [${i + 1}] ${p.name} 可用`;
+
+      // 添加支持的模型类型显示
+      if (testResult.supportedModels && testResult.supportedModels.length > 0) {
+        statusText += ` (支持: ${testResult.supportedModels.join(', ')})`;
+      }
+
       if (verbose && testResult.responseTime) {
-        statusText += ` (${testResult.status}) - ${testResult.responseTime}ms`;
+        statusText += ` - (${testResult.status}) ${testResult.responseTime}ms`;
       }
       if (fromCache) statusText += ' 📋';
     } else {
