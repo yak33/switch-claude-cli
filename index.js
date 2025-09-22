@@ -3,8 +3,24 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { fileURLToPath } from "url";
 import inquirer from "inquirer";
 import { spawn } from "child_process";
+import updateNotifier from "update-notifier";
+
+// 获取当前模块的目录路径（ESM 模块需要这样处理）
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 读取 package.json 用于版本检查
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+
+// 检查更新（每6小时检查一次）
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 6, // 6小时
+  shouldNotifyInNpmScript: false
+});
 
 // 配置目录和文件路径
 const configDir = path.join(os.homedir(), '.switch-claude');
@@ -102,7 +118,7 @@ function ensureConfigDir() {
 }
 
 function showWelcomeAndHelp() {
-  console.log(`🎉 欢迎使用 Switch Claude CLI！`);
+  console.log(`🎉 欢迎使用 Switch Claude CLI v${pkg.version}！`);
   console.log(`\n📚 Switch Claude CLI - Claude API Provider 切换工具
 
 用法:
@@ -110,6 +126,7 @@ function showWelcomeAndHelp() {
 
 选项:
   -h, --help          显示帮助信息
+  -V, --version       显示版本信息并检查更新
   -r, --refresh       强制刷新缓存，重新检测所有 provider
   -v, --verbose       显示详细的调试信息
   -l, --list          只列出 providers 不启动 claude
@@ -118,6 +135,7 @@ function showWelcomeAndHelp() {
   --remove <编号>     删除指定编号的 provider
   --set-default <编号> 设置指定编号的 provider 为默认
   --clear-default     清除默认 provider（每次都需要手动选择）
+  --check-update      手动检查版本更新
 
 参数:
   编号                直接选择指定编号的 provider（跳过交互选择）
@@ -467,20 +485,58 @@ async function main() {
   // 确保配置目录存在
   ensureConfigDir();
 
+  // 显示更新提示（如果有新版本）
+  notifier.notify({
+    isGlobal: true,
+    defer: false, // 立即显示，不延迟到进程结束
+    message: '🚀 发现新版本 {latestVersion}，当前版本 {currentVersion}\n' +
+             '运行以下命令更新：\n' +
+             'npm update -g {packageName}\n' +
+             '或者：\n' + 
+             'npm install -g {packageName}@latest',
+    boxenOptions: {
+      padding: 1,
+      margin: 1,
+      align: 'center',
+      borderColor: 'yellow',
+      borderStyle: 'round'
+    }
+  });
+
   // 解析命令行参数
   const args = process.argv.slice(2);
   const showHelp = args.includes('--help') || args.includes('-h');
+  const showVersion = args.includes('--version') || args.includes('-V');
+
+  // 如果是版本命令，显示版本信息
+  if (showVersion) {
+    console.log(`switch-claude-cli v${pkg.version}`);
+    
+    // 主动检查一次更新
+    const update = await notifier.fetchInfo();
+    if (update && update.latest !== pkg.version) {
+      console.log(`\n🆕 最新版本: v${update.latest}`);
+      if (update.time && update.time[update.latest]) {
+        console.log(`📅 发布时间: ${new Date(update.time[update.latest]).toLocaleString('zh-CN')}`);
+      }
+      console.log(`\n💡 更新命令: npm update -g switch-claude-cli`);
+    } else {
+      console.log('✅ 已是最新版本');
+    }
+    process.exit(0);
+  }
 
   // 如果是帮助命令，直接显示帮助并退出
   if (showHelp) {
     console.log(`
-📚 Switch Claude CLI - Claude API Provider 切换工具
+📚 Switch Claude CLI - Claude API Provider 切换工具 (v${pkg.version})
 
 用法:
   switch-claude [选项] [编号]
 
 选项:
   -h, --help          显示帮助信息
+  -V, --version       显示版本信息并检查更新
   -r, --refresh       强制刷新缓存，重新检测所有 provider
   -v, --verbose       显示详细的调试信息
   -l, --list          只列出 providers 不启动 claude
@@ -489,6 +545,7 @@ async function main() {
   --remove <编号>     删除指定编号的 provider
   --set-default <编号> 设置指定编号的 provider 为默认
   --clear-default     清除默认 provider（每次都需要手动选择）
+  --check-update      手动检查版本更新
 
 参数:
   编号                直接选择指定编号的 provider（跳过交互选择）
@@ -598,7 +655,34 @@ async function main() {
   const setDefault = args.includes('--set-default');
   const clearDefault = args.includes('--clear-default');
   const envOnly = args.includes('--env-only') || args.includes('-e');
+  const checkUpdate = args.includes('--check-update');
   const providerIndex = args.find(arg => !arg.startsWith('-') && !isNaN(parseInt(arg)));
+
+  // 如果是检查更新命令
+  if (checkUpdate) {
+    console.log('🔍 正在检查更新...');
+    const update = await notifier.fetchInfo();
+    
+    if (update && update.latest !== pkg.version) {
+      console.log(`\n🎉 发现新版本！`);
+      console.log(`📌 当前版本: v${pkg.version}`);
+      console.log(`🆕 最新版本: v${update.latest}`);
+      if (update.time && update.time[update.latest]) {
+        console.log(`📅 发布时间: ${new Date(update.time[update.latest]).toLocaleString('zh-CN')}`);
+      }
+      
+      // 尝试获取更新说明
+      if (update.latest) {
+        console.log(`\n💡 更新方法：`);
+        console.log(`   npm update -g switch-claude-cli`);
+        console.log(`   或者：`);
+        console.log(`   npm install -g switch-claude-cli@latest`);
+      }
+    } else {
+      console.log('✅ 太好了！你已经在使用最新版本 v' + pkg.version);
+    }
+    process.exit(0);
+  }
 
   console.log("📋 可用的第三方列表：\n");
   providers.forEach((p, i) => {

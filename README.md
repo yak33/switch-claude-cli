@@ -7,6 +7,8 @@
 
 一个智能的 Claude API Provider 切换工具，帮助你在多个第三方 Claude API 服务之间快速切换。
 
+👉 开发初衷见我的微信公众号文章：[我受够了复制粘贴 Claude Code API ，于是写了个工具，3秒自动切换](https://mp.weixin.qq.com/s/5A5eFc-l6GHBu_qxuLdtIQ)
+
 ## ✨ 功能特性
 
 - 🚀 **智能检测**：自动检测 API 可用性，支持多端点测试和重试机制
@@ -15,6 +17,7 @@
 - 🔧 **配置管理**：完整的 provider 增删改查功能
 - 📊 **详细日志**：可选的详细模式显示响应时间和错误信息
 - 🛡️ **错误处理**：完善的错误处理和用户友好的提示信息
+- 🔔 **版本更新**：v1.3.0 新增！自动提醒用户更新到最新版本
 
 ## 📦 安装
 
@@ -98,6 +101,9 @@ switch-claude 1
 
 # 只设置环境变量，不启动 claude
 switch-claude -e 1
+
+# 查看版本并检查更新
+switch-claude --version
 ```
 
 ### 检测和缓存
@@ -129,6 +135,23 @@ switch-claude --set-default 1
 switch-claude --clear-default
 ```
 
+### 版本更新 🆕 v1.3.0
+
+```bash
+# 查看当前版本并检查更新
+switch-claude --version
+# 或
+switch-claude -V
+
+# 手动检查更新
+switch-claude --check-update
+```
+
+**自动更新提醒**：
+- 🔔 每次运行时自动检查是否有新版本（每6小时检查一次）
+- 📦 如果有新版本，会显示醒目的黄色边框提示
+- 🚀 提供便捷的更新命令
+
 ### 帮助信息
 
 ```bash
@@ -141,6 +164,7 @@ switch-claude --help
 | 选项 | 简写 | 描述 |
 |------|------|------|
 | `--help` | `-h` | 显示帮助信息 |
+| `--version` | `-V` | 显示版本信息并检查更新 |
 | `--refresh` | `-r` | 强制刷新缓存，重新检测所有 provider |
 | `--verbose` | `-v` | 显示详细的调试信息 |
 | `--list` | `-l` | 只列出 providers 不启动 claude |
@@ -149,6 +173,7 @@ switch-claude --help
 | `--remove <编号>` | | 删除指定编号的 provider |
 | `--set-default <编号>` | | 设置指定编号的 provider 为默认 |
 | `--clear-default` | | 清除默认 provider（每次都需要手动选择） |
+| `--check-update` | | 手动检查版本更新 |
 
 ## 📁 配置文件位置
 
@@ -309,7 +334,10 @@ A: 直接复制 `providers.json` 文件即可。
 A: 支持 Windows、macOS 和 Linux。
 
 ### Q: 如何更新工具？
-A: 使用 `npm update -g switch-claude-cli`（全局安装）或 `git pull && npm install`（本地安装）。
+A: 工具会自动提醒你更新！你也可以：
+   - 运行 `switch-claude --version` 查看是否有新版本
+   - 运行 `switch-claude --check-update` 手动检查更新
+   - 使用 `npm update -g switch-claude-cli` 更新到最新版本
 
 ### Q: 缓存文件可以删除吗？
 A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次运行会重新检测。
