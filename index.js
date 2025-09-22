@@ -4,13 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { spawn, spawnSync } from 'child_process';
 import inquirer from 'inquirer';
-import { spawn } from 'child_process';
 import updateNotifier from 'update-notifier';
 import {
   recordCommand,
   recordProviderUse,
-  recordError,
   displayStats,
   exportStats as exportStatsData,
   resetStats,
@@ -1296,7 +1295,7 @@ async function main() {
           type: 'list',
           name: 'provider',
           message: '请选择一个可用的 provider:',
-          choices: available.map((p, i) => {
+          choices: available.map((p) => {
             // 通过 name 和 baseUrl 找到原始索引
             const originalIndex = providers.findIndex(
               (provider) => provider.name === p.name && provider.baseUrl === p.baseUrl
@@ -1336,10 +1335,104 @@ async function main() {
   // 尝试启动 claude
   console.log(`\n🚀 正在启动 Claude Code...`);
 
-  const child = spawn('claude', [], {
-    stdio: 'inherit',
+  // 检查 claude 命令的实际路径
+  let claudeCommand = 'claude';
+  const claudeArgs = [];
+
+  // 尝试解析 shell 别名或获取完整路径
+  try {
+    // 检查操作系统类型
+    const isWindows = process.platform === 'win32';
+
+    if (isWindows) {
+      // Windows 系统处理
+      // 首先尝试使用 where 命令（Windows 等效于 which）
+      const whereResult = spawnSync('where', ['claude'], { encoding: 'utf8' });
+      if (whereResult.status === 0 && whereResult.stdout.trim()) {
+        claudeCommand = whereResult.stdout.trim().split('\n')[0]; // 取第一个结果
+      } else {
+        // 尝试常见的 Windows Claude 安装路径
+        const possiblePaths = [
+          path.join(os.homedir(), '.claude', 'local', 'claude.exe'),
+          path.join(os.homedir(), '.claude', 'local', 'claude'),
+          'C:\\Program Files\\Claude\\claude.exe',
+          'C:\\Program Files (x86)\\Claude\\claude.exe',
+        ];
+
+        for (const possiblePath of possiblePaths) {
+          if (fs.existsSync(possiblePath)) {
+            claudeCommand = possiblePath;
+            break;
+          }
+        }
+      }
+    } else {
+      // Unix-like 系统处理（macOS, Linux）
+      // 首先尝试使用 which 命令获取完整路径
+      const whichResult = spawnSync('which', ['claude'], { encoding: 'utf8' });
+      if (whichResult.status === 0 && whichResult.stdout.trim()) {
+        claudeCommand = whichResult.stdout.trim();
+      } else {
+        // 如果 which 没有找到，尝试使用 bash -c 来解析别名
+        const aliasResult = spawnSync('bash', ['-c', 'alias claude'], { encoding: 'utf8' });
+        if (aliasResult.status === 0 && aliasResult.stdout.trim()) {
+          // 解析别名内容，例如: alias claude='/path/to/claude'
+          const match = aliasResult.stdout.trim().match(/alias claude='([^']+)'/);
+          if (match && match[1]) {
+            claudeCommand = match[1];
+          }
+        } else {
+          // 如果是 zsh，尝试使用 zsh 来解析别名
+          const zshAliasResult = spawnSync('zsh', ['-c', 'alias claude'], { encoding: 'utf8' });
+          if (zshAliasResult.status === 0 && zshAliasResult.stdout.trim()) {
+            // 解析别名内容
+            const match = zshAliasResult.stdout.trim().match(/claude='([^']+)'/);
+            if (match && match[1]) {
+              claudeCommand = match[1];
+            }
+          } else {
+            // 最后尝试直接使用 echo 解析别名
+            const echoResult = spawnSync('bash', ['-c', 'echo $(which claude)'], {
+              encoding: 'utf8',
+            });
+            if (
+              echoResult.status === 0 &&
+              echoResult.stdout.trim() &&
+              !echoResult.stdout.includes('not found')
+            ) {
+              claudeCommand = echoResult.stdout.trim();
+            } else {
+              // 如果所有方法都失败，使用用户配置的路径
+              const userClaudePath =
+                process.env.CLAUDE_PATH || path.join(os.homedir(), '.claude', 'local', 'claude');
+              if (fs.existsSync(userClaudePath)) {
+                claudeCommand = userClaudePath;
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (_error) {
+    // 如果解析失败，尝试使用默认路径
+    const defaultClaudePath =
+      process.platform === 'win32'
+        ? path.join(os.homedir(), '.claude', 'local', 'claude.exe')
+        : path.join(os.homedir(), '.claude', 'local', 'claude');
+
+    if (fs.existsSync(defaultClaudePath)) {
+      claudeCommand = defaultClaudePath;
+    }
+    console.warn(`⚠️ 无法解析 claude 命令路径，使用默认路径`);
+  }
+
+  console.log(`🔍 使用 claude 命令路径: ${claudeCommand}`);
+
+  // 为 Claude Code 设置正确的 stdin 配置以支持交互
+  const child = spawn(claudeCommand, claudeArgs, {
+    stdio: ['inherit', 'inherit', 'inherit'], // 继承 stdin, stdout, stderr
     env: process.env,
-    shell: true, // 在 Windows 上更好地处理命令
+    shell: true,
   });
 
   child.on('error', (error) => {
