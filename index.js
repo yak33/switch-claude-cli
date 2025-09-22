@@ -84,7 +84,7 @@ class ProgressIndicator {
     if (process.stdout.isTTY) {
       // TTY环境：清除上一行并打印新行
       if (this.lastLine) {
-        process.stdout.write('\r' + ' '.repeat(this.lastLine.length) + '\r');
+        process.stdout.write(`\r${' '.repeat(this.lastLine.length)}\r`);
       }
       process.stdout.write(line);
       this.lastLine = line;
@@ -104,7 +104,7 @@ class ProgressIndicator {
 
     if (process.stdout.isTTY) {
       // TTY环境：清除进度行
-      process.stdout.write('\r' + ' '.repeat(this.lastLine.length) + '\r');
+      process.stdout.write(`\r${' '.repeat(this.lastLine.length)}\r`);
       if (finalMessage) {
         console.log(finalMessage);
       }
@@ -181,7 +181,7 @@ function saveCache(results) {
       cacheFile,
       JSON.stringify({
         timestamp: Date.now(),
-        results: results,
+        results,
       })
     );
   } catch (error) {
@@ -747,6 +747,18 @@ async function main() {
   const listBackups_ = args.includes('--list-backups');
   const mergeImport = args.includes('--merge');
 
+  // 其他命令参数
+  const forceRefresh = args.includes('--refresh') || args.includes('-r');
+  const verbose = args.includes('--verbose') || args.includes('-v');
+  const listProviders = args.includes('--list') || args.includes('-l');
+  const addProvider = args.includes('--add');
+  const removeProvider = args.includes('--remove');
+  const setDefault = args.includes('--set-default');
+  const clearDefault = args.includes('--clear-default');
+  const envOnly = args.includes('--env-only') || args.includes('-e');
+  const checkUpdate = args.includes('--check-update');
+  const providerIndex = args.find((arg) => !arg.startsWith('-') && !isNaN(parseInt(arg)));
+
   // 统计相关命令
   if (showStats) {
     recordCommand('--stats');
@@ -995,17 +1007,7 @@ async function main() {
     process.exit(1);
   }
 
-  // 解析其他命令行参数
-  const forceRefresh = args.includes('--refresh') || args.includes('-r');
-  const verbose = args.includes('--verbose') || args.includes('-v');
-  const listProviders = args.includes('--list') || args.includes('-l');
-  const addProvider = args.includes('--add');
-  const removeProvider = args.includes('--remove');
-  const setDefault = args.includes('--set-default');
-  const clearDefault = args.includes('--clear-default');
-  const envOnly = args.includes('--env-only') || args.includes('-e');
-  const checkUpdate = args.includes('--check-update');
-  const providerIndex = args.find((arg) => !arg.startsWith('-') && !isNaN(parseInt(arg)));
+  // 变量已在前面定义，这里不需要重复定义
 
   // 如果是检查更新命令
   if (checkUpdate) {
@@ -1028,7 +1030,7 @@ async function main() {
         console.log(`   npm install -g switch-claude-cli@latest`);
       }
     } else {
-      console.log('✅ 太好了！你已经在使用最新版本 v' + pkg.version);
+      console.log(`✅ 太好了！你已经在使用最新版本 v${pkg.version}`);
     }
     process.exit(0);
   }
