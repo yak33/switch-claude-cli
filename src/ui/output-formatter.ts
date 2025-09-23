@@ -16,7 +16,7 @@ export class OutputFormatter {
     }
 
     const lines: string[] = [];
-    lines.push('📋 Provider 列表:\\n');
+    lines.push('📋 Provider 列表:\n');
 
     providers.forEach((provider, index) => {
       const defaultMark = provider.default ? ' 🌟 [默认]' : '';
@@ -31,7 +31,7 @@ export class OutputFormatter {
       }
     });
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -70,7 +70,7 @@ export class OutputFormatter {
       lines.push('⚪ 没有测试结果');
     }
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -139,7 +139,7 @@ Provider 管理:
       lines.push('更新命令: npm update -g switch-claude-cli');
     }
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -151,7 +151,7 @@ Provider 管理:
     }
 
     const lines: string[] = [];
-    lines.push('📋 备份文件列表:\\n');
+    lines.push('📋 备份文件列表:\n');
 
     backups.forEach((backup, index) => {
       lines.push(`${index + 1}. ${backup.name}`);
@@ -160,7 +160,7 @@ Provider 管理:
       lines.push('');
     });
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -174,7 +174,7 @@ Provider 管理:
     lines.push(`   目录: ${displayPath}`);
     lines.push(`   状态: ${configExists ? '✅ 已配置' : '❌ 未配置'}`);
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -191,7 +191,7 @@ Provider 管理:
       lines.push(`   系统版本: ${info.osRelease}`);
     }
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -207,7 +207,7 @@ Provider 管理:
     }
     lines.push(`   详情: ${message}`);
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -221,7 +221,7 @@ Provider 管理:
       lines.push(`   ${details}`);
     }
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**
@@ -279,7 +279,7 @@ Provider 管理:
       lines.push(dataLine);
     });
 
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   /**

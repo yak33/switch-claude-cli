@@ -199,7 +199,7 @@ export class CommandExecutor {
     options: CliOptions = {}
   ): Promise<CommandResult> {
     // 1. 显示Provider列表
-    console.log('📋 可用的第三方列表：\n');
+    console.log('📋 Provider 列表:\n');
     providers.forEach((p, i) => {
       console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
     });
