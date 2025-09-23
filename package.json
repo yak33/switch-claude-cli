@@ -1,6 +1,6 @@
 {
   "name": "switch-claude-cli",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Smart Claude API provider switcher with availability detection and caching",
   "main": "index.js",
   "bin": {

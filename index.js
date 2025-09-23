@@ -69,14 +69,29 @@ class ProgressIndicator {
     const spinner = this.spinners[this.spinnerIndex % this.spinners.length];
     this.spinnerIndex++;
 
-    let line = `🔍 ${this.message}... ${spinner} [${this.completed}/${this.total}]`;
+    let line = `🔍 检测API ${spinner} [${this.completed}/${this.total}]`;
 
+    // 显示当前正在处理的API完整名称
     if (this.completedItems.length > 0) {
-      const recentItems = this.completedItems.slice(-3).join(', ');
-      if (this.completedItems.length > 3) {
-        line += ` 已完成: ...${recentItems}`;
-      } else {
-        line += ` 已完成: ${recentItems}`;
+      // 显示最新完成的一个项目的完整名称
+      const latestItem = this.completedItems[this.completedItems.length - 1];
+      line += ` 当前: ${latestItem}`;
+    }
+
+    // 控制整行长度，如果太长则优先保留API名称，缩短其他部分
+    const maxLineLength = process.stdout.columns ? Math.min(process.stdout.columns - 2, 100) : 100;
+    if (line.length > maxLineLength) {
+      // 如果行太长，尝试缩短消息部分但保留API名称
+      const baseMessage = `🔍 检测中 ${spinner} [${this.completed}/${this.total}]`;
+      if (this.completedItems.length > 0) {
+        const latestItem = this.completedItems[this.completedItems.length - 1];
+        const remainingSpace = maxLineLength - baseMessage.length - 5; // 5 for " 当前: "
+        if (remainingSpace > 10) {
+          line = `${baseMessage} 当前: ${latestItem}`;
+        } else {
+          // 如果空间不够，只显示基本信息
+          line = baseMessage;
+        }
       }
     }
 
@@ -1192,7 +1207,7 @@ async function main() {
           console.log(`🔍 [${i + 1}] ${p.name}: 使用缓存结果`);
         }
         if (progress) {
-          progress.update(p.name);
+          progress.update(`${p.name}📋`);
         }
         return cache[cacheKey];
       }
@@ -1209,13 +1224,9 @@ async function main() {
 
       // 更新进度
       if (progress) {
-        const modelInfo =
-          result.supportedModels && result.supportedModels.length > 0
-            ? `(${result.supportedModels.join(', ')})`
-            : result.available
-              ? '(可达)'
-              : '';
-        progress.update(`${p.name}${modelInfo}`);
+        // 简化显示信息，只显示provider名称和简单状态
+        const status = result.available ? '✓' : '✗';
+        progress.update(`${p.name}${status}`);
       }
 
       return result;
