@@ -11,7 +11,8 @@ export class CacheManager {
   private readonly cacheFile: string;
   private readonly cacheDuration: number;
 
-  constructor(cacheDuration: number = 5 * 60 * 1000) { // 默认5分钟
+  constructor(cacheDuration: number = 5 * 60 * 1000) {
+    // 默认5分钟
     this.cacheFile = path.join(os.homedir(), '.switch-claude', 'cache.json');
     this.cacheDuration = cacheDuration;
   }
@@ -34,14 +35,14 @@ export class CacheManager {
       if (!fs.existsSync(this.cacheFile)) {
         return {};
       }
-      
+
       const cache = JSON.parse(fs.readFileSync(this.cacheFile, 'utf-8')) as CacheData;
-      
+
       // 检查缓存是否过期
       if (cache.timestamp && Date.now() - cache.timestamp < this.cacheDuration) {
         return cache.results;
       }
-      
+
       return {};
     } catch (error) {
       console.warn('⚠️ 缓存加载失败:', error instanceof Error ? error.message : String(error));
@@ -59,13 +60,13 @@ export class CacheManager {
         timestamp: Date.now(),
         results,
       };
-      
+
       // 确保目录存在
       const cacheDir = path.dirname(this.cacheFile);
       if (!fs.existsSync(cacheDir)) {
         fs.mkdirSync(cacheDir, { recursive: true });
       }
-      
+
       fs.writeFileSync(this.cacheFile, JSON.stringify(cacheData, null, 2));
     } catch (error) {
       console.warn('⚠️ 缓存保存失败:', error instanceof Error ? error.message : String(error));
@@ -103,7 +104,7 @@ export class CacheManager {
   getBatchCachedResults(providers: Provider[]): Map<string, TestResult> {
     const cache = this.loadCache();
     const results = new Map<string, TestResult>();
-    
+
     providers.forEach((provider, index) => {
       const cacheKey = this.generateCacheKey(provider);
       const cachedResult = cache[cacheKey];
@@ -111,7 +112,7 @@ export class CacheManager {
         results.set(String(index), cachedResult);
       }
     });
-    
+
     return results;
   }
 
@@ -122,14 +123,14 @@ export class CacheManager {
    */
   setBatchCachedResults(providers: Provider[], results: TestResult[]): void {
     const cache = this.loadCache();
-    
+
     providers.forEach((provider, index) => {
       if (results[index]) {
         const cacheKey = this.generateCacheKey(provider);
         cache[cacheKey] = results[index];
       }
     });
-    
+
     this.saveCache(cache);
   }
 
@@ -153,7 +154,7 @@ export class CacheManager {
   clearProviderCache(provider: Provider): void {
     const cache = this.loadCache();
     const cacheKey = this.generateCacheKey(provider);
-    
+
     if (cache[cacheKey]) {
       delete cache[cacheKey];
       this.saveCache(cache);
@@ -169,7 +170,7 @@ export class CacheManager {
       if (!fs.existsSync(this.cacheFile)) {
         return false;
       }
-      
+
       const cache = JSON.parse(fs.readFileSync(this.cacheFile, 'utf-8')) as CacheData;
       return Boolean(cache.timestamp && Date.now() - cache.timestamp < this.cacheDuration);
     } catch {
@@ -205,12 +206,12 @@ export class CacheManager {
       stats.sizeBytes = fileStats.size;
 
       const cache = JSON.parse(fs.readFileSync(this.cacheFile, 'utf-8')) as CacheData;
-      
+
       if (cache.timestamp) {
         stats.age = Date.now() - cache.timestamp;
         stats.isValid = stats.age < this.cacheDuration;
       }
-      
+
       stats.entryCount = Object.keys(cache.results || {}).length;
     } catch {
       // 忽略错误，返回默认统计

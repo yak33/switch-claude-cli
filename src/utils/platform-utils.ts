@@ -45,7 +45,8 @@ export class PlatformUtils {
    */
   static async findClaudeCommand(): Promise<string | null> {
     const platform = this.getPlatform();
-    const commands = platform === 'windows' ? ['where claude'] : ['which claude', 'command -v claude'];
+    const commands =
+      platform === 'windows' ? ['where claude'] : ['which claude', 'command -v claude'];
 
     for (const cmd of commands) {
       try {
@@ -53,7 +54,7 @@ export class PlatformUtils {
         const result = execSync(cmd, {
           encoding: 'utf8',
           stdio: ['ignore', 'pipe', 'ignore'],
-          timeout: 5000
+          timeout: 5000,
         });
 
         const claudePath = result.trim();
@@ -97,7 +98,7 @@ export class PlatformUtils {
           'C:\\Program Files (x86)\\Claude\\claude.exe',
           `${process.env.USERPROFILE}\\AppData\\Local\\Claude\\claude.exe`,
           `${process.env.USERPROFILE}\\AppData\\Roaming\\npm\\claude.cmd`,
-          'claude.exe'
+          'claude.exe',
         ];
       case 'macos':
         return [
@@ -105,7 +106,7 @@ export class PlatformUtils {
           '/usr/local/bin/claude',
           '/opt/homebrew/bin/claude',
           `${process.env.HOME}/.local/bin/claude`,
-          '/usr/bin/claude'
+          '/usr/bin/claude',
         ];
       case 'linux':
         return [
@@ -113,7 +114,7 @@ export class PlatformUtils {
           '/usr/bin/claude',
           `${process.env.HOME}/.local/bin/claude`,
           '/snap/bin/claude',
-          '/opt/claude/bin/claude'
+          '/opt/claude/bin/claude',
         ];
       default:
         return ['/usr/local/bin/claude', '/usr/bin/claude'];
@@ -156,9 +157,7 @@ export class PlatformUtils {
 
     if (configDir.startsWith(home)) {
       const relativePath = configDir.substring(home.length);
-      return platform === 'windows'
-        ? `%USERPROFILE%${relativePath}`
-        : `~${relativePath}`;
+      return platform === 'windows' ? `%USERPROFILE%${relativePath}` : `~${relativePath}`;
     }
 
     return configDir;
@@ -188,7 +187,7 @@ export class PlatformUtils {
       platform,
       arch,
       nodeVersion,
-      osRelease
+      osRelease,
     };
   }
 
@@ -207,7 +206,7 @@ export class PlatformUtils {
         const child = spawn(command, args, {
           cwd: options.cwd || process.cwd(),
           stdio: ['inherit', 'pipe', 'pipe'],
-          shell: this.getPlatform() === 'windows'
+          shell: this.getPlatform() === 'windows',
         });
 
         let output = '';
@@ -233,7 +232,7 @@ export class PlatformUtils {
           resolve({
             success: code === 0,
             output: output.trim(),
-            error: error.trim() || undefined
+            error: error.trim() || undefined,
           });
         });
 
@@ -241,14 +240,14 @@ export class PlatformUtils {
           clearTimeout(timer);
           resolve({
             success: false,
-            error: err.message
+            error: err.message,
           });
         });
       });
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '未知错误'
+        error: error instanceof Error ? error.message : '未知错误',
       };
     }
   }

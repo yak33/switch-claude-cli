@@ -65,14 +65,14 @@ export class FileUtils {
 
     return fs
       .readdirSync(this.backupDir)
-      .filter(file => file.endsWith('.json'))
-      .map(file => {
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => {
         const filePath = path.join(this.backupDir, file);
         const stats = fs.statSync(filePath);
         return {
           name: file,
           path: filePath,
-          time: stats.mtime
+          time: stats.mtime,
         };
       })
       .sort((a, b) => b.time.getTime() - a.time.getTime());
@@ -85,7 +85,7 @@ export class FileUtils {
     const backups = this.getBackupFiles();
     if (backups.length > 10) {
       const filesToDelete = backups.slice(10);
-      filesToDelete.forEach(backup => {
+      filesToDelete.forEach((backup) => {
         try {
           fs.unlinkSync(backup.path);
         } catch (error) {

@@ -122,10 +122,10 @@ export class ConfigManager {
       if (options.merge) {
         // 合并模式：与现有配置合并
         const existingProviders = await this.loadProviders();
-        const existingNames = new Set(existingProviders.map(p => p.name));
+        const existingNames = new Set(existingProviders.map((p) => p.name));
 
         // 只添加不重复的 Provider
-        newProviders = newProviders.filter(p => !existingNames.has(p.name));
+        newProviders = newProviders.filter((p) => !existingNames.has(p.name));
         newProviders = [...existingProviders, ...newProviders];
       } else {
         // 替换模式：备份现有配置
@@ -183,7 +183,7 @@ export class ConfigManager {
     const errors = ValidationUtils.validateProviders(providers);
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

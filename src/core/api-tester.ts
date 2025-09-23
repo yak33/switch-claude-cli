@@ -67,7 +67,9 @@ export class ApiTester {
           const responseTime = Date.now() - startTime;
 
           if (verbose) {
-            console.log(`    ⏱️  响应时间: ${responseTime}ms, 状态: ${res.status} ${res.statusText}`);
+            console.log(
+              `    ⏱️  响应时间: ${responseTime}ms, 状态: ${res.status} ${res.statusText}`
+            );
           }
 
           // 扩展状态码处理：200/400/401/403/422/429 都说明服务可达
@@ -91,9 +93,7 @@ export class ApiTester {
                 endpoint: '/v1/messages',
                 responseTime,
                 supportedModels: [...supportedModels],
-                error: res.ok
-                  ? null
-                  : this.getErrorMessage(res.status),
+                error: res.ok ? null : this.getErrorMessage(res.status),
               };
             }
 
@@ -171,7 +171,7 @@ export class ApiTester {
       if (error.name === 'AbortError') {
         return 'Timeout (8s)';
       }
-      
+
       // 检查网络错误
       const message = error.message.toLowerCase();
       if (message.includes('enotfound')) {
@@ -183,10 +183,10 @@ export class ApiTester {
       if (message.includes('etimedout')) {
         return '连接超时';
       }
-      
+
       return error.message;
     }
-    
+
     return String(error);
   }
 

@@ -40,7 +40,7 @@ export abstract class BaseCommand {
       return {
         success: false,
         error: `命令 ${this.name} 需要 ${expectedTypes.length} 个参数，但只提供了 ${args.length} 个`,
-        exitCode: 1
+        exitCode: 1,
       };
     }
 
@@ -52,7 +52,7 @@ export abstract class BaseCommand {
         return {
           success: false,
           error: `参数 ${i + 1} 应该是字符串类型`,
-          exitCode: 1
+          exitCode: 1,
         };
       }
 
@@ -60,7 +60,7 @@ export abstract class BaseCommand {
         return {
           success: false,
           error: `参数 ${i + 1} 应该是数字类型`,
-          exitCode: 1
+          exitCode: 1,
         };
       }
 
@@ -68,7 +68,7 @@ export abstract class BaseCommand {
         return {
           success: false,
           error: `参数 ${i + 1} 应该是布尔类型`,
-          exitCode: 1
+          exitCode: 1,
         };
       }
     }
@@ -83,7 +83,7 @@ export abstract class BaseCommand {
     return {
       success: true,
       message,
-      exitCode: 0
+      exitCode: 0,
     };
   }
 
@@ -94,7 +94,7 @@ export abstract class BaseCommand {
     return {
       success: false,
       error,
-      exitCode
+      exitCode,
     };
   }
 
@@ -112,7 +112,7 @@ export abstract class BaseCommand {
       const message = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `${errorMessage}: ${message}`
+        error: `${errorMessage}: ${message}`,
       };
     }
   }
@@ -131,7 +131,7 @@ export abstract class BaseCommand {
       const message = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `${errorMessage}: ${message}`
+        error: `${errorMessage}: ${message}`,
       };
     }
   }

@@ -82,7 +82,10 @@ export class ValidationUtils {
   /**
    * 验证 Provider 索引
    */
-  static validateProviderIndex(index: string, maxIndex: number): { valid: boolean; value?: number; error?: string } {
+  static validateProviderIndex(
+    index: string,
+    maxIndex: number
+  ): { valid: boolean; value?: number; error?: string } {
     const num = parseInt(index, 10);
 
     if (isNaN(num)) {
@@ -129,10 +132,10 @@ export class ValidationUtils {
     const exampleKeys = [
       'sk-your-api-key-here',
       'cr_your-api-key-here',
-      'custom_your-api-key-here'
+      'custom_your-api-key-here',
     ];
 
-    if (exampleKeys.some(example => key.includes(example))) {
+    if (exampleKeys.some((example) => key.includes(example))) {
       return { valid: false, error: '请替换为真实的 API Key' };
     }
 
@@ -161,7 +164,10 @@ export class ValidationUtils {
   /**
    * 验证Provider名称
    */
-  static validateProviderName(name: string, existingNames: string[] = []): { valid: boolean; error?: string } {
+  static validateProviderName(
+    name: string,
+    existingNames: string[] = []
+  ): { valid: boolean; error?: string } {
     if (!name || name.trim() === '') {
       return { valid: false, error: 'Provider 名称不能为空' };
     }
@@ -193,9 +199,9 @@ export class ValidationUtils {
    * 检查是否为示例配置
    */
   static isExampleConfig(providers: Provider[]): boolean {
-    return providers.some(provider =>
-      provider.baseUrl.includes('example') ||
-      provider.key.includes('your-api-key-here')
+    return providers.some(
+      (provider) =>
+        provider.baseUrl.includes('example') || provider.key.includes('your-api-key-here')
     );
   }
 }

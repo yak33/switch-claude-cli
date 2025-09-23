@@ -140,7 +140,7 @@ export class CliParser {
       options,
       providerIndex,
       showHelp,
-      showVersion
+      showVersion,
     };
   }
 
@@ -150,18 +150,24 @@ export class CliParser {
   static validateOptions(options: CliOptions): { valid: boolean; error?: string } {
     // 检查互斥选项
     const mutuallyExclusive = [
-      'list', 'add', 'remove', 'setDefault', 'clearDefault',
-      'export', 'import', 'backup', 'listBackups', 'stats'
+      'list',
+      'add',
+      'remove',
+      'setDefault',
+      'clearDefault',
+      'export',
+      'import',
+      'backup',
+      'listBackups',
+      'stats',
     ];
 
-    const activeOptions = mutuallyExclusive.filter(key =>
-      options[key as keyof CliOptions]
-    );
+    const activeOptions = mutuallyExclusive.filter((key) => options[key as keyof CliOptions]);
 
     if (activeOptions.length > 1) {
       return {
         valid: false,
-        error: `选项冲突: ${activeOptions.join(', ')} 不能同时使用`
+        error: `选项冲突: ${activeOptions.join(', ')} 不能同时使用`,
       };
     }
 
@@ -169,28 +175,28 @@ export class CliParser {
     if (options.remove && !options.providerIndex) {
       return {
         valid: false,
-        error: '--remove 需要指定 provider 编号'
+        error: '--remove 需要指定 provider 编号',
       };
     }
 
     if (options.setDefault && !options.providerIndex) {
       return {
         valid: false,
-        error: '--set-default 需要指定 provider 编号'
+        error: '--set-default 需要指定 provider 编号',
       };
     }
 
     if (options.import && !options.importPath) {
       return {
         valid: false,
-        error: '--import 需要指定文件路径'
+        error: '--import 需要指定文件路径',
       };
     }
 
     if (options.merge && !options.import) {
       return {
         valid: false,
-        error: '--merge 只能与 --import 一起使用'
+        error: '--merge 只能与 --import 一起使用',
       };
     }
 
@@ -211,7 +217,7 @@ export class CliParser {
     try {
       // 动态导入 package.json
       const { default: pkg } = await import('../../package.json', {
-        assert: { type: 'json' }
+        assert: { type: 'json' },
       });
 
       // 检查更新
@@ -225,11 +231,7 @@ export class CliParser {
       const hasUpdate = !!notifier.update;
       const latestVersion = notifier.update?.latest;
 
-      const versionInfo = OutputFormatter.formatVersionInfo(
-        pkg.version,
-        hasUpdate,
-        latestVersion
-      );
+      const versionInfo = OutputFormatter.formatVersionInfo(pkg.version, hasUpdate, latestVersion);
 
       console.log(versionInfo);
     } catch (error) {

@@ -51,12 +51,8 @@ async function main(): Promise<void> {
       CliInterface.showError('执行失败', result.error);
       process.exit(result.exitCode || 1);
     }
-
   } catch (error) {
-    CliInterface.showError(
-      '程序异常',
-      error instanceof Error ? error.message : String(error)
-    );
+    CliInterface.showError('程序异常', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

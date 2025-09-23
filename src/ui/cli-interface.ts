@@ -23,7 +23,7 @@ export class CliInterface {
 
     const choices = providers.map((provider, index) => ({
       name: `${index + 1}. ${provider.name} (${provider.baseUrl})`,
-      value: index
+      value: index,
     }));
 
     const answer = await inquirer.prompt([
@@ -32,8 +32,8 @@ export class CliInterface {
         name: 'provider',
         message: '请选择一个 Provider:',
         choices,
-        pageSize: Math.min(choices.length, 10)
-      }
+        pageSize: Math.min(choices.length, 10),
+      },
     ]);
 
     return answer.provider as number;
@@ -45,7 +45,7 @@ export class CliInterface {
   static async addProvider(existingProviders: Provider[]): Promise<Provider | null> {
     console.log('\\n🚀 添加新的 Provider\\n');
 
-    const existingNames = existingProviders.map(p => p.name);
+    const existingNames = existingProviders.map((p) => p.name);
 
     try {
       const answers = await inquirer.prompt([
@@ -56,7 +56,7 @@ export class CliInterface {
           validate: (input: string) => {
             const result = ValidationUtils.validateProviderName(input, existingNames);
             return result.valid || result.error || false;
-          }
+          },
         },
         {
           type: 'input',
@@ -65,7 +65,7 @@ export class CliInterface {
           validate: (input: string) => {
             const result = ValidationUtils.validateUrl(input);
             return result.valid || result.error || false;
-          }
+          },
         },
         {
           type: 'input',
@@ -74,21 +74,21 @@ export class CliInterface {
           validate: (input: string) => {
             const result = ValidationUtils.validateApiKey(input);
             return result.valid || result.error || false;
-          }
+          },
         },
         {
           type: 'confirm',
           name: 'setAsDefault',
           message: '是否设置为默认 Provider?',
-          default: existingProviders.length === 0
-        }
+          default: existingProviders.length === 0,
+        },
       ]);
 
       return {
         name: answers.name.trim(),
         baseUrl: answers.baseUrl.trim(),
         key: answers.key.trim(),
-        default: answers.setAsDefault
+        default: answers.setAsDefault,
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes('cancelled')) {
@@ -108,8 +108,8 @@ export class CliInterface {
         type: 'confirm',
         name: 'confirm',
         message: `确定要删除 Provider "${provider.name}" 吗？`,
-        default: false
-      }
+        default: false,
+      },
     ]);
 
     return answer.confirm as boolean;
@@ -127,9 +127,9 @@ export class CliInterface {
         choices: [
           { name: '替换现有配置', value: 'replace' },
           { name: '合并配置（保留现有同名 provider）', value: 'merge' },
-          { name: '取消', value: 'cancel' }
-        ]
-      }
+          { name: '取消', value: 'cancel' },
+        ],
+      },
     ]);
 
     return answer.mode === 'cancel' ? null : (answer.mode as 'replace' | 'merge');
@@ -138,15 +138,17 @@ export class CliInterface {
   /**
    * 选择备份文件
    */
-  static async selectBackupFile(backups: Array<{ name: string; path: string; time: Date }>): Promise<string | null> {
+  static async selectBackupFile(
+    backups: Array<{ name: string; path: string; time: Date }>
+  ): Promise<string | null> {
     if (backups.length === 0) {
       console.log('❌ 没有找到备份文件');
       return null;
     }
 
-    const choices = backups.map(backup => ({
+    const choices = backups.map((backup) => ({
       name: `${backup.name} (${backup.time.toLocaleString()})`,
-      value: backup.path
+      value: backup.path,
     }));
 
     choices.push({ name: '取消', value: 'cancel' });
@@ -157,8 +159,8 @@ export class CliInterface {
         name: 'backup',
         message: '选择要恢复的备份:',
         choices,
-        pageSize: Math.min(choices.length, 10)
-      }
+        pageSize: Math.min(choices.length, 10),
+      },
     ]);
 
     return answer.backup === 'cancel' ? null : (answer.backup as string);
@@ -173,8 +175,8 @@ export class CliInterface {
         type: 'confirm',
         name: 'confirm',
         message,
-        default: defaultValue
-      }
+        default: defaultValue,
+      },
     ]);
 
     return answer.confirm as boolean;
@@ -196,8 +198,8 @@ export class CliInterface {
           }
           const result = ValidationUtils.validateFilePath(input);
           return result.valid || result.error || false;
-        }
-      }
+        },
+      },
     ]);
 
     return answer.filePath?.trim() || null;

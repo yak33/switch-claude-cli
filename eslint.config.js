@@ -1,16 +1,24 @@
 import js from '@eslint/js';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
   {
+    files: ['**/*.ts', '**/*.tsx'],
     plugins: {
+      '@typescript-eslint': tsPlugin,
       prettier,
     },
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'module',
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
       globals: {
         console: 'readonly',
         process: 'readonly',
@@ -27,9 +35,10 @@ export default [
       },
     },
     rules: {
+      ...tsPlugin.configs.recommended.rules,
       'prettier/prettier': 'error',
       'no-console': 'off', // CLI 工具需要 console
-      'no-unused-vars': [
+      '@typescript-eslint/no-unused-vars': [
         'error',
         {
           argsIgnorePattern: '^_',
@@ -45,7 +54,39 @@ export default [
       'no-await-in-loop': 'warn',
       'no-throw-literal': 'error',
       'prefer-promise-reject-errors': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
+  },
+  {
+    files: ['**/*.js', '**/*.jsx'],
+    plugins: {
+      prettier,
+    },
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+    rules: {
+      'prettier/prettier': 'error',
+      'no-console': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
     ignores: ['node_modules/', 'coverage/', 'dist/', '*.min.js'],
   },
   prettierConfig,

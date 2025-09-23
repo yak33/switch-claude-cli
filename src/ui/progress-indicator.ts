@@ -122,7 +122,7 @@ export class ProgressIndicator {
     return {
       completed: this.completed,
       total: this.total,
-      percentage: Math.round((this.completed / this.total) * 100)
+      percentage: Math.round((this.completed / this.total) * 100),
     };
   }
 

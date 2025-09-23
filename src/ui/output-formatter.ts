@@ -45,7 +45,8 @@ export class OutputFormatter {
     for (const [providerName, result] of results) {
       if (result.available) {
         const responseTime = result.responseTime ? ` (${result.responseTime}ms)` : '';
-        const models = result.supportedModels.length > 0 ? ` [${result.supportedModels.join(', ')}]` : '';
+        const models =
+          result.supportedModels.length > 0 ? ` [${result.supportedModels.join(', ')}]` : '';
         available.push(`✅ ${providerName}${responseTime}${models}`);
       } else {
         const error = verbose && result.error ? ` - ${result.error}` : '';
@@ -55,13 +56,13 @@ export class OutputFormatter {
 
     if (available.length > 0) {
       lines.push('🟢 可用的 Providers:');
-      lines.push(...available.map(line => `  ${line}`));
+      lines.push(...available.map((line) => `  ${line}`));
       lines.push('');
     }
 
     if (unavailable.length > 0) {
       lines.push('🔴 不可用的 Providers:');
-      lines.push(...unavailable.map(line => `  ${line}`));
+      lines.push(...unavailable.map((line) => `  ${line}`));
       lines.push('');
     }
 
@@ -124,7 +125,11 @@ Provider 管理:
   /**
    * 格式化版本信息
    */
-  static formatVersionInfo(version: string, hasUpdate: boolean = false, latestVersion?: string): string {
+  static formatVersionInfo(
+    version: string,
+    hasUpdate: boolean = false,
+    latestVersion?: string
+  ): string {
     const lines: string[] = [];
     lines.push(`Switch Claude CLI v${version}`);
 
@@ -236,14 +241,14 @@ Provider 管理:
     // 计算每列的最大宽度
     const colWidths = headers.map((header, colIndex) => {
       const headerWidth = header.length;
-      const maxDataWidth = Math.max(...rows.map(row => (row[colIndex] || '').length));
+      const maxDataWidth = Math.max(...rows.map((row) => (row[colIndex] || '').length));
       return Math.max(headerWidth, maxDataWidth);
     });
 
     // 调整列宽以适应终端宽度
     const totalWidth = colWidths.reduce((sum, width) => sum + width + padding, 0);
     if (totalWidth > maxWidth) {
-      const availableWidth = maxWidth - (colWidths.length * padding);
+      const availableWidth = maxWidth - colWidths.length * padding;
       const ratio = availableWidth / colWidths.reduce((sum, width) => sum + width, 0);
       colWidths.forEach((_, index) => {
         colWidths[index] = Math.floor(colWidths[index] * ratio);
@@ -259,17 +264,15 @@ Provider 管理:
     lines.push(headerLine);
 
     // 分隔线
-    const separatorLine = colWidths
-      .map(width => '-'.repeat(width))
-      .join(' '.repeat(padding));
+    const separatorLine = colWidths.map((width) => '-'.repeat(width)).join(' '.repeat(padding));
     lines.push(separatorLine);
 
     // 数据行
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const dataLine = row
         .map((cell, index) => {
           const width = colWidths[index] || 0;
-          const truncated = cell.length > width ? cell.substring(0, width - 3) + '...' : cell;
+          const truncated = cell.length > width ? `${cell.substring(0, width - 3)}...` : cell;
           return truncated.padEnd(width);
         })
         .join(' '.repeat(padding));
