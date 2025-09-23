@@ -11,6 +11,14 @@
 
 👉 开发初衷见我的微信公众号文章：[我受够了复制粘贴 Claude Code API ，于是写了个工具，3秒自动切换](https://mp.weixin.qq.com/s/5A5eFc-l6GHBu_qxuLdtIQ)
 
+## 📋 文档和更新
+
+- 📄 **[更新日志](CHANGELOG.md)** - 查看所有版本更新记录
+- 🚀 **[TypeScript重构分支](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor)** - 全新的模块化架构正在开发中！
+  - ✨ 完整的TypeScript类型安全
+  - 🏗️ 模块化架构，更易维护和扩展
+  - 🧪 更好的测试支持
+
 ## ✨ 功能特性
 
 - 🚀 **智能检测**：自动检测 API 可用性，支持多端点测试和重试机制
@@ -444,3 +452,5 @@ A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次
 **项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)
 **问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)
 **NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)
+**更新日志**: [CHANGELOG.md](CHANGELOG.md)
+**TypeScript重构**: [feature/typescript-refactor](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor) 🚀
