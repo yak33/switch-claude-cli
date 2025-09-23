@@ -77,27 +77,7 @@ export class CommandExecutor {
 
       const providers = loadResult.result;
 
-      // 处理特殊命令
-      if (options.list) {
-        return this.executeListCommand(providers, options.verbose);
-      }
-
-      if (options.add) {
-        return this.executeAddCommand(providers);
-      }
-
-      if (options.remove && providerIndex) {
-        return this.executeRemoveCommand(providers, providerIndex);
-      }
-
-      if (options.setDefault && providerIndex) {
-        return this.executeSetDefaultCommand(providers, providerIndex);
-      }
-
-      if (options.clearDefault) {
-        return this.executeClearDefaultCommand(providers);
-      }
-
+      // 处理不需要显示provider列表的命令
       if (options.export) {
         return this.executeExportCommand(providers, options.exportPath);
       }
@@ -112,6 +92,33 @@ export class CommandExecutor {
 
       if (options.listBackups) {
         return this.executeListBackupsCommand();
+      }
+
+      // 显示provider列表 - 按照原版逻辑，所有其他命令都需要先显示列表
+      console.log('📋 配置的 Provider 列表：\n');
+      providers.forEach((p, i) => {
+        console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
+      });
+
+      // 处理需要显示provider列表的命令
+      if (options.list) {
+        return this.createSuccessResult();
+      }
+
+      if (options.add) {
+        return this.executeAddCommand(providers);
+      }
+
+      if (options.remove && options.providerIndex) {
+        return this.executeRemoveCommand(providers, options.providerIndex);
+      }
+
+      if (options.setDefault && options.providerIndex) {
+        return this.executeSetDefaultCommand(providers, options.providerIndex);
+      }
+
+      if (options.clearDefault) {
+        return this.executeClearDefaultCommand(providers);
       }
 
       // 主要功能：批量检测并选择Provider
@@ -211,13 +218,9 @@ export class CommandExecutor {
     providerIndex?: string,
     options: CliOptions = {}
   ): Promise<CommandResult> {
-    // 1. 显示Provider列表
-    console.log('📋 Provider 列表:\n');
-    providers.forEach((p, i) => {
-      console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
-    });
+    // 注意：Provider列表已经在调用此方法之前显示了
 
-    // 2. 检查缓存 - 按照原版逻辑
+    // 1. 检查缓存 - 按照原版逻辑
     const cache = options.refresh ? {} : this.cacheManager.getCache();
     const cacheKeys = Object.keys(cache);
     const hasCachedResults = cacheKeys.length > 0;
@@ -245,7 +248,7 @@ export class CommandExecutor {
         return cachedResult;
       });
     } else {
-      // 3. 批量检测所有Providers
+      // 2. 批量检测所有Providers
       if (!options.verbose) {
         // 非详细模式下显示进度条
         const progress = new ProgressIndicator({ total: providers.length, message: '正在检测 API 可用性' });
@@ -295,7 +298,7 @@ export class CommandExecutor {
       }
     }
 
-    // 4. 更新缓存
+    // 3. 更新缓存
     const newCache: Record<string, TestResult> = {};
     providers.forEach((p, i) => {
       const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
@@ -306,7 +309,7 @@ export class CommandExecutor {
     });
     this.cacheManager.saveCache(newCache);
 
-    // 5. 显示检测结果
+    // 4. 显示检测结果
     const results = providers.map((p, i) => {
       const testResult = testResults[i];
       if (!testResult) {
@@ -348,13 +351,13 @@ export class CommandExecutor {
       return { ...p, ok: isAvailable, testResult };
     });
 
-    // 6. 检查是否有可用的Provider
+    // 5. 检查是否有可用的Provider
     const available = results.filter((p) => p.ok);
     if (available.length === 0) {
       return this.createErrorResult('🚨 没有可用的服务！');
     }
 
-    // 7. 选择Provider
+    // 6. 选择Provider
     let selected;
 
     if (providerIndex !== undefined) {
@@ -393,7 +396,7 @@ export class CommandExecutor {
       }
     }
 
-    // 8. 启动Claude
+    // 7. 启动Claude
     return this.launchClaude(selected, options.envOnly);
   }
 
