@@ -39,6 +39,40 @@
 npm install -g switch-claude-cli
 ```
 
+### 🚀 预发布版本 (TypeScript 重构)
+
+我们提供了完全重构的 TypeScript 版本供测试，具有更好的代码结构和类型安全：
+
+```bash
+# 安装 Beta 版本（推荐用于测试）
+npm install -g switch-claude-cli@beta
+
+# 安装 Alpha 版本（最新开发版本）
+npm install -g switch-claude-cli@alpha
+```
+
+**Beta 版本特性**：
+- ✨ 完全 TypeScript 重构，类型安全
+- 🏗️ 模块化架构，更易维护和扩展
+- 🧪 完整的单元测试覆盖
+- 🐛 修复了原版的一些已知问题
+- 🔄 与原版功能完全兼容
+- 📦 更好的错误处理和用户体验
+
+**注意事项**：
+- Beta 版本仍在测试阶段，建议在非生产环境使用
+- 如遇到问题，请在 [GitHub Issues](https://github.com/yak33/switch-claude-cli/issues) 反馈
+- 配置文件与稳定版本完全兼容，可以无缝切换
+
+**切换版本**：
+```bash
+# 切换回稳定版本
+npm install -g switch-claude-cli@latest
+
+# 切换到 Beta 版本
+npm install -g switch-claude-cli@beta
+```
+
 ### 从源码安装
 
 ```bash
@@ -447,10 +481,31 @@ A: 工具会自动提醒你更新！你也可以：
 
 A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次运行会重新检测。
 
+### Q: Beta 版本和稳定版本有什么区别？
+
+A: Beta 版本是 TypeScript 重构版本，主要区别：
+
+**Beta 版本优势**：
+- ✨ 完全 TypeScript 重构，类型安全
+- 🏗️ 更好的代码架构和可维护性
+- 🐛 修复了一些已知问题
+- 📦 更好的错误处理
+
+**兼容性**：
+- 🔄 功能与稳定版本完全兼容
+- 📁 配置文件可以无缝切换
+- 🔧 命令行参数完全一致
+
+**如何选择**：
+- 生产环境：推荐使用稳定版本 `@latest`
+- 测试环境：可以尝试 Beta 版本 `@beta`
+- 开发环境：可以使用 Alpha 版本 `@alpha`
+
 ---
 
-**项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)
-**问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)
-**NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)
-**更新日志**: [CHANGELOG.md](CHANGELOG.md)
-**TypeScript重构**: [feature/typescript-refactor](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor) 🚀
+**项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)  
+**问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)  
+**NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)  
+**预发布版本**: [switch-claude-cli@beta](https://www.npmjs.com/package/switch-claude-cli/v/beta) 🚀  
+**更新日志**: [CHANGELOG.md](CHANGELOG.md)  
+**TypeScript重构**: [feature/typescript-refactor](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor)

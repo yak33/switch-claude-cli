@@ -220,35 +220,35 @@ export class CommandExecutor {
   ): Promise<CommandResult> {
     // 注意：Provider列表已经在调用此方法之前显示了
 
-    // 1. 检查缓存 - 按照原版逻辑
+    // 1. 检查缓存
     const cache = options.refresh ? {} : this.cacheManager.getCache();
     const cacheKeys = Object.keys(cache);
     const hasCachedResults = cacheKeys.length > 0;
 
     let testResults: TestResult[] = [];
 
-    if (hasCachedResults && !options.refresh) {
+    // 检查是否所有provider都有缓存
+    const allProvidersHaveCache = providers.every((p) => {
+      const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+      return cache[cacheKey];
+    });
+
+    if (allProvidersHaveCache && hasCachedResults && !options.refresh) {
       console.log('\n💾 使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n');
 
-      // 混合使用缓存和实时检测
+      // 所有provider都有缓存，直接使用
       testResults = providers.map((p) => {
         const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
-        const cachedResult = cache[cacheKey];
-        // 如果缓存中没有找到结果，返回一个默认的不可用结果
-        if (!cachedResult) {
-          return {
-            available: false,
-            status: null,
-            endpoint: '/v1/messages',
-            responseTime: null,
-            supportedModels: [],
-            error: '缓存结果不可用，请使用 --refresh 重新检测',
-          };
-        }
-        return cachedResult;
+        return cache[cacheKey];
       });
     } else {
-      // 2. 批量检测所有Providers
+      // 2. 混合使用缓存和实时检测
+      if (hasCachedResults && !options.refresh) {
+        console.log('\n💾 部分使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n');
+      } else {
+        console.log('\n🔍 正在检测 API 可用性...\n');
+      }
+
       if (!options.verbose) {
         // 非详细模式下显示进度条
         const progress = new ProgressIndicator({ total: providers.length, message: '正在检测 API 可用性' });
@@ -278,8 +278,6 @@ export class CommandExecutor {
         progress.finish();
       } else {
         // 详细模式下显示传统信息
-        console.log('\n🔍 正在并行检测可用性...\n');
-
         const testPromises = providers.map(async (p, i) => {
           const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
           if (cache[cacheKey] && !options.refresh) {
@@ -466,7 +464,13 @@ export class CommandExecutor {
         process.exit(code || 0);
       });
 
-      return this.createSuccessResult('Claude 已启动');
+      // 不返回结果，让程序继续运行等待Claude进程结束
+      console.log('✅ Claude 已启动');
+      
+      // 返回一个永不resolve的Promise，让程序等待Claude进程结束
+      return new Promise(() => {
+        // 这个Promise永远不会resolve，程序会一直等待直到Claude进程退出并调用process.exit()
+      });
     } catch (error) {
       return this.createErrorResult(
         `启动 Claude 失败: ${error instanceof Error ? error.message : String(error)}`

@@ -24,7 +24,10 @@
     "prebuild": "npm run type-check",
     "prepublishOnly": "npm run clean && npm run build",
     "start": "node dist/index.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "publish:beta": "npm version prerelease --preid=beta --no-git-tag-version && npm publish --tag beta",
+    "publish:alpha": "npm version prerelease --preid=alpha --no-git-tag-version && npm publish --tag alpha",
+    "publish:typescript": "npm version prerelease --preid=typescript --no-git-tag-version && npm publish --tag typescript"
   },
   "keywords": [
     "claude",
