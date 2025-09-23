@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import type { Provider } from '../types/index.js';
+import type { Provider } from '../types';
 import { ValidationUtils } from '../utils/validation.js';
 
 /**

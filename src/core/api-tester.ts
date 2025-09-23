@@ -1,4 +1,4 @@
-import type { Provider, TestResult } from '../types/index.js';
+import type { Provider, TestResult } from '../types';
 
 /**
  * API 测试器

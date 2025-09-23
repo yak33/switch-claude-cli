@@ -1,4 +1,4 @@
-import type { CommandResult } from '../types/index.js';
+import type { CommandResult } from '../types';
 
 /**
  * 基础命令抽象类

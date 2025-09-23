@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import type { CacheData, TestResult, Provider } from '../types/index.js';
+import type { CacheData, TestResult, Provider } from '../types';
 
 /**
  * 缓存管理器

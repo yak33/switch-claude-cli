@@ -1,4 +1,4 @@
-import type { ProgressOptions } from '../types/index.js';
+import type { ProgressOptions } from '../types';
 
 /**
  * 进度显示组件

@@ -1,4 +1,4 @@
-import type { CliOptions } from '../types/index.js';
+import type { CliOptions } from '../types';
 import { OutputFormatter } from '../ui/output-formatter.js';
 
 /**

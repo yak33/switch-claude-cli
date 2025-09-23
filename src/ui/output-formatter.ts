@@ -1,4 +1,4 @@
-import type { Provider, TestResult } from '../types/index.js';
+import type { Provider, TestResult } from '../types';
 import { ValidationUtils } from '../utils/validation.js';
 import { PlatformUtils } from '../utils/platform-utils.js';
 

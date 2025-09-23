@@ -1,4 +1,4 @@
-import type { Provider } from '../types/index.js';
+import type { Provider } from '../types';
 
 /**
  * 数据验证工具类
