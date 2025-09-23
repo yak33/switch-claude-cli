@@ -124,8 +124,11 @@ export class CliParser {
 
         default:
           // 如果是数字，可能是 provider 索引
-          if (/^\\d+$/.test(arg) && !providerIndex) {
+          if (/^\d+$/.test(arg) && !providerIndex) {
             providerIndex = arg;
+          } else if (arg.startsWith('-')) {
+            // 无效的选项
+            throw new Error(`未知选项: ${arg}`);
           }
           break;
       }

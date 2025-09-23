@@ -35,6 +35,19 @@ export class CommandExecutor {
       // 检查更新（后台执行）
       this.checkForUpdates();
 
+      // 优先处理不需要配置文件的命令
+      if (options.stats) {
+        return this.executeStatsCommand(options.verbose);
+      }
+
+      if (options.exportStats) {
+        return this.executeExportStatsCommand(options.exportPath);
+      }
+
+      if (options.resetStats) {
+        return this.executeResetStatsCommand();
+      }
+
       // 确保配置目录存在
       const isFirstRun = FileUtils.ensureConfigDir();
 
@@ -710,6 +723,33 @@ export class CommandExecutor {
       error,
       exitCode,
     };
+  }
+
+  /**
+   * 执行统计命令
+   */
+  private executeStatsCommand(verbose: boolean = false): CommandResult {
+    console.log('📊 使用统计功能暂未实现');
+    console.log('💡 此功能将在后续版本中添加');
+    return this.createSuccessResult();
+  }
+
+  /**
+   * 执行导出统计命令
+   */
+  private executeExportStatsCommand(filePath?: string): CommandResult {
+    console.log('📊 导出统计功能暂未实现');
+    console.log('💡 此功能将在后续版本中添加');
+    return this.createSuccessResult();
+  }
+
+  /**
+   * 执行重置统计命令
+   */
+  private executeResetStatsCommand(): CommandResult {
+    console.log('📊 重置统计功能暂未实现');
+    console.log('💡 此功能将在后续版本中添加');
+    return this.createSuccessResult();
   }
 
   /**

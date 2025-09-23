@@ -43,7 +43,7 @@ export class CliInterface {
    * 交互式添加Provider
    */
   static async addProvider(existingProviders: Provider[]): Promise<Provider | null> {
-    console.log('\\n🚀 添加新的 Provider\\n');
+    console.log('\n🚀 添加新的 Provider\n');
 
     const existingNames = existingProviders.map((p) => p.name);
 
@@ -92,7 +92,7 @@ export class CliInterface {
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes('cancelled')) {
-        console.log('\\n操作已取消');
+        console.log('\n操作已取消');
         return null;
       }
       throw error;

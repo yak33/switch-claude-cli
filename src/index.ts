@@ -52,7 +52,16 @@ async function main(): Promise<void> {
       process.exit(result.exitCode || 1);
     }
   } catch (error) {
-    CliInterface.showError('程序异常', error instanceof Error ? error.message : String(error));
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // 如果是未知选项错误，显示使用帮助
+    if (errorMessage.includes('未知选项:')) {
+      CliInterface.showError('参数错误', errorMessage);
+      console.log('\n' + CliParser.getUsage());
+    } else {
+      CliInterface.showError('程序异常', errorMessage);
+    }
+    
     process.exit(1);
   }
 }
