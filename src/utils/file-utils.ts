@@ -132,4 +132,37 @@ export class FileUtils {
     const stats = fs.statSync(filePath);
     return stats.mtime;
   }
+
+  /**
+   * 获取package.json信息
+   * 使用与原版相同的方式，避免动态导入的路径问题
+   */
+  static getPackageInfo(): { version: string; name: string } | null {
+    try {
+      // 获取当前模块的目录路径
+      const currentDir = path.dirname(new URL(import.meta.url).pathname);
+
+      // 在Windows上，需要处理路径格式
+      const normalizedDir = process.platform === 'win32' && currentDir.startsWith('/')
+        ? currentDir.slice(1) : currentDir;
+
+      // 从当前文件位置向上查找package.json
+      let packagePath = path.resolve(normalizedDir, '../..', 'package.json');
+
+      // 如果第一个路径不存在，尝试其他可能的路径
+      if (!fs.existsSync(packagePath)) {
+        // 可能在构建后的dist目录中运行
+        packagePath = path.resolve(normalizedDir, '../../..', 'package.json');
+      }
+
+      if (fs.existsSync(packagePath)) {
+        const content = fs.readFileSync(packagePath, 'utf-8');
+        return JSON.parse(content);
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
 }

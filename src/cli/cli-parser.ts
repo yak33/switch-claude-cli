@@ -1,5 +1,6 @@
 import type { CliOptions } from '../types';
 import { OutputFormatter } from '../ui/output-formatter.js';
+import { FileUtils } from '../utils/file-utils.js';
 
 /**
  * CLI 参数解析器
@@ -215,10 +216,13 @@ export class CliParser {
    */
   static async showVersion(): Promise<void> {
     try {
-      // 动态导入 package.json
-      const { default: pkg } = await import('../../package.json', {
-        assert: { type: 'json' },
-      });
+      // 使用FileUtils获取package.json信息
+      const pkg = FileUtils.getPackageInfo();
+
+      if (!pkg) {
+        console.log('Switch Claude CLI (版本信息不可用)');
+        return;
+      }
 
       // 检查更新
       const updateNotifier = (await import('update-notifier')).default;

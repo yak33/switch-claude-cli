@@ -39,7 +39,17 @@ export class CommandExecutor {
       const isFirstRun = FileUtils.ensureConfigDir();
 
       if (isFirstRun || !FileUtils.fileExists(FileUtils.configPath)) {
-        return await this.handleFirstRun();
+        const firstRunResult = await this.handleFirstRun();
+        // 只有在用户选择继续时才继续执行主逻辑
+        if (firstRunResult.success && firstRunResult.message === 'continue') {
+          // 检查配置文件是否已创建且有效
+          if (!FileUtils.fileExists(FileUtils.configPath)) {
+            return this.createErrorResult('配置文件创建失败');
+          }
+          // 配置已创建，继续执行主逻辑
+        } else {
+          return firstRunResult; // 其他情况直接退出
+        }
       }
 
       // 加载配置
@@ -91,8 +101,8 @@ export class CommandExecutor {
         return this.executeListBackupsCommand();
       }
 
-      // 主要功能：选择并启动 Provider
-      return await this.executeProviderSelection(providers, providerIndex, options);
+      // 主要功能：批量检测并选择Provider
+      return await this.executeMainFlow(providers, providerIndex, options);
     } catch (error) {
       return this.createErrorResult(error instanceof Error ? error.message : String(error));
     }
@@ -102,122 +112,342 @@ export class CommandExecutor {
    * 处理首次运行
    */
   private async handleFirstRun(): Promise<CommandResult> {
-    console.log('🎉 欢迎使用 Switch Claude CLI！');
-    console.log('📂 正在初始化配置...');
+    // 显示完整的欢迎信息和帮助
+    const pkg = await this.getPackageInfo();
+    CliInterface.showWelcomeAndHelp(pkg?.version || '1.0.0');
 
-    // 创建示例配置
-    const createResult = await this.handleAsyncOperation(
-      () => this.configManager.createExampleConfig(),
-      '创建示例配置失败'
-    );
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`🔧 首次运行，正在初始化配置...`);
 
-    if (!createResult.success) {
-      return this.createErrorResult(createResult.error || '初始化失败');
+    // 询问用户是否使用交互式配置
+    try {
+      const useInteractive = await CliInterface.askUseInteractiveSetup();
+
+      if (useInteractive) {
+        const setupResult = await CliInterface.interactiveSetup();
+        if (!setupResult) {
+          // 用户取消了配置，回退到手动方式
+          const createResult = await this.handleAsyncOperation(
+            () => this.configManager.createExampleConfig(),
+            '创建示例配置失败'
+          );
+
+          if (!createResult.success) {
+            return this.createErrorResult(createResult.error || '初始化失败');
+          }
+
+          CliInterface.showManualConfigInstructions(FileUtils.configPath);
+          return { success: true, message: '', exitCode: 0 };
+        }
+
+        // 保存交互式配置的结果
+        const saveResult = await this.handleAsyncOperation(
+          () => this.configManager.saveProviders([setupResult.provider]),
+          '保存配置失败'
+        );
+
+        if (!saveResult.success) {
+          return this.createErrorResult(saveResult.error || '保存配置失败');
+        }
+
+        console.log(`\n✅ 配置已保存到: ${FileUtils.configPath}`);
+
+        if (setupResult.continueSetup) {
+          console.log(`\n🎉 配置完成！现在开始检测 API 可用性...\n`);
+          // 返回特殊的成功状态，让程序继续执行主逻辑
+          return { success: true, message: 'continue', exitCode: 0 };
+        } else {
+          console.log(`\n💡 配置已完成，你可以随时运行 switch-claude 开始使用！`);
+          return { success: true, message: '', exitCode: 0 };
+        }
+      } else {
+        // 用户选择手动配置
+        const createResult = await this.handleAsyncOperation(
+          () => this.configManager.createExampleConfig(),
+          '创建示例配置失败'
+        );
+
+        if (!createResult.success) {
+          return this.createErrorResult(createResult.error || '初始化失败');
+        }
+
+        CliInterface.showManualConfigInstructions(FileUtils.configPath);
+        return { success: true, message: '', exitCode: 0 };
+      }
+    } catch {
+      // 如果交互式询问失败，回退到原来的方式
+      const createResult = await this.handleAsyncOperation(
+        () => this.configManager.createExampleConfig(),
+        '创建示例配置失败'
+      );
+
+      if (!createResult.success) {
+        return this.createErrorResult(createResult.error || '初始化失败');
+      }
+
+      CliInterface.showManualConfigInstructions(FileUtils.configPath);
+      return { success: true, message: '', exitCode: 0 };
     }
-
-    // 显示欢迎信息
-    const editCommand = PlatformUtils.getConfigEditCommand(FileUtils.configPath);
-    CliInterface.showWelcomeMessage(FileUtils.configPath, editCommand);
-
-    return this.createSuccessResult('配置初始化完成');
   }
 
   /**
-   * 执行 Provider 选择和启动
+   * 执行主流程 - 完全按照原版逻辑
    */
-  private async executeProviderSelection(
+  private async executeMainFlow(
     providers: Provider[],
     providerIndex?: string,
     options: CliOptions = {}
   ): Promise<CommandResult> {
-    let selectedIndex: number;
+    // 1. 显示Provider列表
+    console.log('📋 可用的第三方列表：\n');
+    providers.forEach((p, i) => {
+      console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
+    });
 
-    if (providerIndex) {
-      // 直接指定索引
-      const validation = ValidationUtils.validateProviderIndex(providerIndex, providers.length);
-      if (!validation.valid) {
-        return this.createErrorResult(validation.error || '无效索引');
-      }
-      selectedIndex = validation.value!;
+    // 2. 检查缓存 - 按照原版逻辑
+    const cache = options.refresh ? {} : this.cacheManager.getCache();
+    const cacheKeys = Object.keys(cache);
+    const hasCachedResults = cacheKeys.length > 0;
+
+    let testResults: TestResult[] = [];
+
+    if (hasCachedResults && !options.refresh) {
+      console.log('\n💾 使用缓存结果 (5分钟内有效，使用 --refresh 强制刷新)：\n');
+
+      // 混合使用缓存和实时检测
+      testResults = providers.map((p) => {
+        const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+        const cachedResult = cache[cacheKey];
+        // 如果缓存中没有找到结果，返回一个默认的不可用结果
+        if (!cachedResult) {
+          return {
+            available: false,
+            status: null,
+            endpoint: '/v1/messages',
+            responseTime: null,
+            supportedModels: [],
+            error: '缓存结果不可用，请使用 --refresh 重新检测',
+          };
+        }
+        return cachedResult;
+      });
     } else {
-      // 查找默认 Provider 或交互式选择
-      const defaultIndex = providers.findIndex((p) => p.default);
-      if (defaultIndex !== -1) {
-        selectedIndex = defaultIndex;
-        console.log(`✅ 使用默认 Provider: ${providers[defaultIndex]?.name}`);
+      // 3. 批量检测所有Providers
+      if (!options.verbose) {
+        // 非详细模式下显示进度条
+        const progress = new ProgressIndicator({ total: providers.length, message: '正在检测 API 可用性' });
+        progress.start();
+
+        const testPromises = providers.map(async (p, i) => {
+          const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+          if (cache[cacheKey] && !options.refresh) {
+            if (progress) {
+              progress.update(`${p.name}📋`);
+            }
+            return cache[cacheKey];
+          }
+
+          const result = await this.apiTester.testProvider(p, false);
+
+          // 更新进度
+          if (progress) {
+            const status = result.available ? '✓' : '✗';
+            progress.update(`${p.name}${status}`);
+          }
+
+          return result;
+        });
+
+        testResults = await Promise.all(testPromises);
+        progress.finish();
       } else {
-        const choice = await CliInterface.selectProvider(providers);
-        if (choice === null) {
+        // 详细模式下显示传统信息
+        console.log('\n🔍 正在并行检测可用性...\n');
+
+        const testPromises = providers.map(async (p, i) => {
+          const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+          if (cache[cacheKey] && !options.refresh) {
+            console.log(`🔍 [${i + 1}] ${p.name}: 使用缓存结果`);
+            return cache[cacheKey];
+          }
+
+          console.log(`🔍 [${i + 1}] ${p.name}: 开始检测...`);
+          const result = await this.apiTester.testProvider(p, true);
+          console.log(`🔍 [${i + 1}] ${p.name}: 检测完成 - ${result.available ? '可用' : '不可用'}`);
+
+          return result;
+        });
+
+        testResults = await Promise.all(testPromises);
+      }
+    }
+
+    // 4. 更新缓存
+    const newCache: Record<string, TestResult> = {};
+    providers.forEach((p, i) => {
+      const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+      const result = testResults[i];
+      if (result) {
+        newCache[cacheKey] = result;
+      }
+    });
+    this.cacheManager.saveCache(newCache);
+
+    // 5. 显示检测结果
+    const results = providers.map((p, i) => {
+      const testResult = testResults[i];
+      if (!testResult) {
+        // 如果测试结果不存在，创建一个默认的失败结果
+        console.log(`❌ [${i + 1}] ${p.name} 不可用 - 测试结果缺失`);
+        return { ...p, ok: false, testResult: {
+          available: false,
+          status: null,
+          endpoint: '/v1/messages',
+          responseTime: null,
+          supportedModels: [],
+          error: '测试结果缺失',
+        }};
+      }
+
+      const isAvailable = testResult.available;
+      const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
+      const fromCache = cache[cacheKey] && !options.refresh;
+
+      let statusText = '';
+      if (isAvailable) {
+        statusText = `✅ [${i + 1}] ${p.name} 可用`;
+
+        // 添加支持的模型类型显示
+        if (testResult.supportedModels && testResult.supportedModels.length > 0) {
+          statusText += ` (支持: ${testResult.supportedModels.join(', ')})`;
+        }
+
+        if (options.verbose && testResult.responseTime) {
+          statusText += ` - (${testResult.status}) ${testResult.responseTime}ms`;
+        }
+        if (fromCache) statusText += ' 📋';
+      } else {
+        statusText = `❌ [${i + 1}] ${p.name} 不可用 - ${testResult.error}`;
+        if (fromCache) statusText += ' 📋';
+      }
+
+      console.log(statusText);
+      return { ...p, ok: isAvailable, testResult };
+    });
+
+    // 6. 检查是否有可用的Provider
+    const available = results.filter((p) => p.ok);
+    if (available.length === 0) {
+      return this.createErrorResult('🚨 没有可用的服务！');
+    }
+
+    // 7. 选择Provider
+    let selected;
+
+    if (providerIndex !== undefined) {
+      const index = parseInt(providerIndex, 10) - 1; // 转换为 0-based index
+      if (!isNaN(index) && index >= 0 && results[index] && results[index]!.ok) {
+        selected = results[index]!;
+        console.log(`\n👉 已通过编号选择: ${selected.name} (${selected.baseUrl})`);
+      } else {
+        return this.createErrorResult(`编号 ${providerIndex} 无效或该 provider 不可用`);
+      }
+    } else {
+      const defaultProvider = results.find((p) => p.default && p.ok);
+      if (defaultProvider) {
+        selected = defaultProvider;
+        console.log(`\n⭐ 已自动选择默认 provider: ${selected.name} (${selected.baseUrl})`);
+      } else {
+        // 没有默认 provider，总是显示交互式选择
+        const choices = available.map((p) => {
+          // 通过 name 和 baseUrl 找到原始索引
+          const originalIndex = providers.findIndex(
+            (provider) => provider.name === p.name && provider.baseUrl === p.baseUrl
+          );
+          const displayIndex = originalIndex + 1;
+          return {
+            name: `[${displayIndex}] ${p.name} (${p.baseUrl})`,
+            value: p,
+          };
+        });
+
+        // 构造选择菜单
+        const answer = await CliInterface.selectProvider(available);
+        if (answer === null) {
           return this.createErrorResult('未选择 Provider', 0);
         }
-        selectedIndex = choice;
+        selected = available[answer]!;
       }
     }
 
-    const selectedProvider = providers[selectedIndex];
-    if (!selectedProvider) {
-      return this.createErrorResult('Provider 不存在');
-    }
-
-    // 检测 Provider 可用性
-    if (!options.refresh) {
-      const cachedResult = this.cacheManager.getCachedResult(selectedProvider);
-      if (cachedResult && cachedResult.available) {
-        return this.launchClaude(selectedProvider, options.envOnly);
-      }
-    }
-
-    // 执行检测
-    console.log(`🔍 检测 ${selectedProvider.name} 可用性...`);
-    const testResult = await this.apiTester.testProvider(selectedProvider, options.verbose);
-
-    if (!testResult.available) {
-      CliInterface.showError(
-        `Provider "${selectedProvider.name}" 不可用`,
-        testResult.error || undefined
-      );
-      return this.createErrorResult('Provider 不可用');
-    }
-
-    // 缓存结果
-    this.cacheManager.cacheResult(selectedProvider, testResult);
-
-    return this.launchClaude(selectedProvider, options.envOnly);
+    // 8. 启动Claude
+    return this.launchClaude(selected, options.envOnly);
   }
 
   /**
    * 启动 Claude
    */
   private async launchClaude(provider: Provider, envOnly: boolean = false): Promise<CommandResult> {
-    // 设置环境变量
-    process.env.ANTHROPIC_API_URL = provider.baseUrl;
-    process.env.ANTHROPIC_API_KEY = provider.key;
+    // 设置环境变量 - 使用原版的环境变量名称
+    process.env.ANTHROPIC_BASE_URL = provider.baseUrl;
+    process.env.ANTHROPIC_AUTH_TOKEN = provider.key;
 
-    console.log(`✅ 已设置环境变量:`);
-    console.log(`   ANTHROPIC_API_URL=${provider.baseUrl}`);
-    console.log(`   ANTHROPIC_API_KEY=${ValidationUtils.maskSensitiveData(provider.key)}`);
+    console.log(`\n✅ 已切换到: ${provider.name} (${provider.baseUrl})`);
+    console.log(`\n🔧 环境变量已设置:`);
+    console.log(`   ANTHROPIC_BASE_URL=${provider.baseUrl}`);
+    console.log(`   ANTHROPIC_AUTH_TOKEN=${provider.key.slice(0, 12)}...`);
 
     if (envOnly) {
-      return this.createSuccessResult('环境变量已设置，请手动运行 claude 命令');
+      console.log(`\n📋 环境变量设置完成！你可以手动运行 claude 命令`);
+      console.log(`\n💡 在当前会话中，你也可以使用这些命令：`);
+      console.log(`   $env:ANTHROPIC_BASE_URL="${provider.baseUrl}"`);
+      console.log(`   $env:ANTHROPIC_AUTH_TOKEN="${provider.key}"`);
+      console.log(`   claude`);
+      return { success: true, message: '', exitCode: 0 };
     }
 
-    // 查找并启动 Claude
+    // 尝试启动 claude
+    console.log(`\n🚀 正在启动 Claude Code...`);
+
+    // 查找并启动 Claude - 使用原版的复杂路径查找逻辑
     const claudePath = await PlatformUtils.findClaudeCommand();
-    if (!claudePath) {
-      CliInterface.showWarning('未找到 claude 命令，请确保 Claude Code 已正确安装');
-      return this.createSuccessResult('环境变量已设置，请手动运行 claude 命令');
-    }
-
-    console.log(`🚀 启动 Claude Code...`);
+    console.log(`🔍 使用 claude 命令路径: ${claudePath || 'claude'}`);
 
     try {
-      const claude = spawn(claudePath, [], {
-        stdio: 'inherit',
+      // 为 Claude Code 设置正确的 stdin 配置以支持交互
+      const claude = spawn(claudePath || 'claude', [], {
+        stdio: ['inherit', 'inherit', 'inherit'], // 继承 stdin, stdout, stderr
         env: process.env,
+        shell: true,
       });
 
       claude.on('error', (error) => {
-        CliInterface.showError('启动 Claude 失败', error.message);
+        if ((error as any).code === 'ENOENT') {
+          console.error(`\n❌ 找不到 'claude' 命令！`);
+          console.log(`\n💡 解决方案：`);
+          console.log(`   1. 确保 Claude Code 已正确安装`);
+          console.log(`   2. 检查 claude 命令是否在 PATH 环境变量中`);
+          console.log(`   3. 或者手动设置环境变量后运行 claude：`);
+          console.log(`      $env:ANTHROPIC_BASE_URL="${provider.baseUrl}"`);
+          console.log(`      $env:ANTHROPIC_AUTH_TOKEN="${provider.key}"`);
+          console.log(`      claude`);
+          console.log(`\n🔍 当前 PATH 包含的目录：`);
+          const paths = (process.env.PATH || '').split(process.platform === 'win32' ? ';' : ':');
+          paths.slice(0, 5).forEach((p) => console.log(`   - ${p}`));
+          if (paths.length > 5) {
+            console.log(`   ... 还有 ${paths.length - 5} 个目录`);
+          }
+        } else {
+          console.error(`\n❌ 启动 claude 时出错: ${error.message}`);
+        }
+        process.exit(1);
+      });
+
+      claude.on('exit', (code) => {
+        if (code !== 0 && code !== null) {
+          console.log(`\n⚠️  Claude Code 退出，退出码: ${code}`);
+        }
+        process.exit(code || 0);
       });
 
       return this.createSuccessResult('Claude 已启动');
@@ -480,5 +710,12 @@ export class CommandExecutor {
       error,
       exitCode,
     };
+  }
+
+  /**
+   * 获取包信息
+   */
+  private async getPackageInfo(): Promise<{ version: string } | null> {
+    return FileUtils.getPackageInfo();
   }
 }
