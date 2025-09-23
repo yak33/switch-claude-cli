@@ -252,4 +252,12 @@ export class CacheManager {
   getCacheDuration(): number {
     return this.cacheDuration;
   }
+
+  /**
+   * 获取完整缓存（别名方法）
+   * @returns 缓存结果
+   */
+  getCache(): Record<string, TestResult> {
+    return this.loadCache();
+  }
 }

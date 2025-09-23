@@ -206,30 +206,152 @@ export class CliInterface {
   }
 
   /**
-   * 显示首次运行的欢迎信息
+   * 显示首次运行的欢迎信息和完整帮助
    */
-  static showWelcomeMessage(configPath: string, editCommand: string): void {
-    console.log(`
-🎉 欢迎使用 Switch Claude CLI！
+  static showWelcomeAndHelp(version: string): void {
+    console.log(`🎉 欢迎使用 Switch Claude CLI v${version}！`);
+    console.log(`\n📚 Switch Claude CLI - Claude API Provider 切换工具
 
-📂 配置目录已创建: ${configPath}
+用法:
+  switch-claude [选项] [编号]
 
-⚠️  请先编辑配置文件，添加你的 API 信息：
+选项:
+  -h, --help          显示帮助信息
+  -V, --version       显示版本信息并检查更新
+  -r, --refresh       强制刷新缓存，重新检测所有 provider
+  -v, --verbose       显示详细的调试信息
+  -l, --list          只列出 providers 不启动 claude
+  -e, --env-only      只设置环境变量，不启动 claude
+  --add               添加新的 provider
+  --remove <编号>     删除指定编号的 provider
+  --set-default <编号> 设置指定编号的 provider 为默认
+  --clear-default     清除默认 provider（每次都需要手动选择）
+  --check-update      手动检查版本更新
+  --export [文件名]   导出配置到文件
+  --import <文件名>   从文件导入配置
+  --backup            备份当前配置
+  --list-backups      列出所有备份
 
-${editCommand}
+参数:
+  编号                直接选择指定编号的 provider（跳过交互选择）
 
-📝 配置示例：
-[
-  {
-    "name": "我的Claude服务",
-    "baseUrl": "https://api.example.com",
-    "key": "sk-your-real-api-key-here",
-    "default": true
+示例:
+  switch-claude           # 交互式选择
+  switch-claude 1         # 直接选择编号为 1 的 provider
+  switch-claude --refresh # 强制刷新缓存后选择
+  switch-claude -v 2      # 详细模式选择编号为 2 的 provider
+  switch-claude --list    # 只列出所有 providers
+  switch-claude --add     # 添加新的 provider
+  switch-claude --remove 2 # 删除编号为 2 的 provider
+  switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
+  switch-claude --clear-default  # 清除默认设置
+  switch-claude -e 1      # 只设置环境变量，不启动 claude`);
   }
-]
 
-💡 配置完成后，再次运行 switch-claude 即可开始使用！
-`);
+  /**
+   * 询问是否使用交互式配置向导
+   */
+  static async askUseInteractiveSetup(): Promise<boolean> {
+    const answer = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'useInteractive',
+        message: '是否使用交互式配置向导? (推荐)',
+        default: true,
+      },
+    ]);
+
+    return answer.useInteractive as boolean;
+  }
+
+  /**
+   * 交互式配置向导
+   */
+  static async interactiveSetup(): Promise<{ provider: Provider; continueSetup: boolean } | null> {
+    console.log(`\n🚀 欢迎使用交互式配置向导！\n`);
+    console.log(`我们将帮你添加第一个 Claude API Provider。`);
+    console.log(`你可以稍后使用 --add 命令添加更多 provider。\n`);
+
+    try {
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'name',
+          message: '请输入 Provider 名称:',
+          default: '我的Claude服务',
+          validate: (input: string) => input.trim() ? true : '名称不能为空',
+        },
+        {
+          type: 'input',
+          name: 'baseUrl',
+          message: '请输入 API Base URL:',
+          default: 'https://api.example.com',
+          validate: (input: string) => {
+            try {
+              new URL(input);
+              return true;
+            } catch {
+              return '请输入有效的 URL';
+            }
+          },
+        },
+        {
+          type: 'input',
+          name: 'key',
+          message: '请输入 API Key:',
+          validate: (input: string) => {
+            const trimmed = input.trim();
+            if (!trimmed) return 'API Key 不能为空';
+            if (trimmed.length < 10) return 'API Key 长度太短，请检查是否完整';
+            return true;
+          },
+        },
+        {
+          type: 'confirm',
+          name: 'continueSetup',
+          message: '配置完成！是否现在就开始使用?',
+          default: true,
+        },
+      ]);
+
+      const provider: Provider = {
+        name: answers.name.trim(),
+        baseUrl: answers.baseUrl.trim(),
+        key: answers.key.trim(),
+        default: true,
+      };
+
+      return {
+        provider,
+        continueSetup: answers.continueSetup,
+      };
+    } catch (error) {
+      if ((error as any)?.isTtyError || (error as any)?.name === 'ExitPromptError') {
+        console.log(`\n\n⚠️  已取消配置。`);
+        return null;
+      } else {
+        console.error(`❌ 配置过程中出现错误: ${(error as Error).message}`);
+        return null;
+      }
+    }
+  }
+
+  /**
+   * 显示首次运行的手动配置指引
+   */
+  static showManualConfigInstructions(configPath: string): void {
+    console.log(`\n📝 请编辑配置文件，替换为你的真实 API 信息：`);
+
+    if (process.platform === 'win32') {
+      console.log(`   notepad "${configPath}"`);
+    } else if (process.platform === 'darwin') {
+      console.log(`   open "${configPath}"`);
+    } else {
+      console.log(`   nano "${configPath}"`);
+      console.log(`   或者 vim "${configPath}"`);
+    }
+
+    console.log(`\n💡 配置完成后，再次运行 switch-claude 即可使用！`);
   }
 
   /**
