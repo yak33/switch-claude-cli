@@ -11,7 +11,7 @@ export class ProgressIndicator {
   private readonly spinners: string[] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
   private spinnerIndex: number = 0;
   private readonly completedItems: string[] = [];
-  private interval: NodeJS.Timeout | null = null;
+  private interval: ReturnType<typeof setInterval> | null = null;
   private lastLine: string = '';
 
   constructor(options: ProgressOptions) {

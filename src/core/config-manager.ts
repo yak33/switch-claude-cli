@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import type { Provider, ExportData, ImportOptions, BackupMetadata } from '../types';
+import type { Provider, ExportData, ImportOptions } from '../types';
 import { ValidationUtils } from '../utils/validation.js';
 import { FileUtils } from '../utils/file-utils.js';
 

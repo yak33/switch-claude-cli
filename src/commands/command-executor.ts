@@ -273,7 +273,7 @@ export class CommandExecutor {
         });
         progress.start();
 
-        const testPromises = providers.map(async (p, i) => {
+        const testPromises = providers.map(async (p, _i) => {
           const cacheKey = `${p.baseUrl}:${p.key.slice(-8)}`;
           if (cache[cacheKey] && !options.refresh) {
             if (progress) {
@@ -400,7 +400,7 @@ export class CommandExecutor {
         console.log(`\n⭐ 已自动选择默认 provider: ${selected.name} (${selected.baseUrl})`);
       } else {
         // 没有默认 provider，总是显示交互式选择
-        const choices = available.map((p) => {
+        const _choices = available.map((p) => {
           // 通过 name 和 baseUrl 找到原始索引
           const originalIndex = providers.findIndex(
             (provider) => provider.name === p.name && provider.baseUrl === p.baseUrl

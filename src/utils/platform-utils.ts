@@ -1,4 +1,4 @@
-import type { Provider } from '../types/index.js';
+// import type { Provider } from '../types/index.js';
 
 /**
  * 平台工具类
@@ -176,8 +176,9 @@ export class PlatformUtils {
     const nodeVersion = process.version;
     let osRelease: string | undefined;
 
-    try {
-      const os = require('os');
+        try {
+      // 使用动态 require 来避免 ESM 导入问题
+      const os = eval('require')('os');
       osRelease = os.release();
     } catch {
       // os模块可能不可用

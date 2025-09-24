@@ -242,7 +242,7 @@ export class CliParser {
       const versionInfo = OutputFormatter.formatVersionInfo(pkg.version, hasUpdate, latestVersion);
 
       console.log(versionInfo);
-    } catch (error) {
+    } catch {
       console.log('Switch Claude CLI (版本信息不可用)');
     }
   }

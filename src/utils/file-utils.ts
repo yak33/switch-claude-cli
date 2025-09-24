@@ -163,7 +163,7 @@ export class FileUtils {
       }
 
       return null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
