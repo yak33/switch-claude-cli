@@ -1,22 +1,41 @@
 # Switch Claude CLI
 
 [![npm version](https://badge.fury.io/js/switch-claude-cli.svg)](https://www.npmjs.com/package/switch-claude-cli)
+[![Tests](https://github.com/yak33/switch-claude-cli/actions/workflows/test.yml/badge.svg)](https://github.com/yak33/switch-claude-cli/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-95.62%25-brightgreen)]()
 [![GitHub license](https://img.shields.io/github/license/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/issues)
 [![GitHub stars](https://img.shields.io/github/stars/yak33/switch-claude-cli)](https://github.com/yak33/switch-claude-cli/stargazers)
 
 A smart Claude API provider switcher that helps you quickly switch between multiple third-party Claude API services.
 
+👉 For the original motivation behind this project, see this WeChat article (Chinese): [我受够了复制粘贴 Claude Code API ，于是写了个工具，3秒自动切换](https://mp.weixin.qq.com/s/5A5eFc-l6GHBu_qxuLdtIQ)
+
+## 📋 Documentation and Updates
+
+- 📄 **[Changelog](CHANGELOG.md)** - View all version update records
+
 ## ✨ Features
 
-- 🚀 **Smart Detection**: Automatically checks API availability with support for multi-endpoint testing and a retry mechanism.
-- ⚡ **Caching**: Caches detection results for 5 minutes to avoid redundant checks.
-- 🎯 **Flexible Selection**: Supports automatic selection of a default provider or interactive manual selection.
-- 🔧 **Configuration Management**: Full CRUD (Create, Read, Update, Delete) functionality for managing providers.
-- 📊 **Verbose Logging**: Optional verbose mode to display detailed response times and error messages.
-- 🛡️ **Robust Error Handling**: Comprehensive error handling with user-friendly tips.
+- 🚀 **Smart Detection**: Automatically checks API availability with support for multi-endpoint testing and a retry mechanism
+- ⚡ **Caching**: Caches detection results for 5 minutes to avoid redundant checks
+- 🎯 **Flexible Selection**: Supports automatic selection of a default provider or interactive manual selection
+- 🔧 **Configuration Management**: Full CRUD (Create, Read, Update, Delete) functionality for managing providers
+- 📊 **Verbose Logging**: Optional verbose mode to display detailed response times and error messages
+- 🛡️ **Robust Error Handling**: Comprehensive error handling with user-friendly tips
+- 🔔 **Version Updates**: Automatic reminders to update to the latest version
+- 📦 **Configuration Backup**: Support for exporting, importing, backing up and restoring configurations
+- 📺 **Optimized Display**: Shows complete API names, intelligently adapts to terminal width
+- ✨ **TypeScript Refactor**: v1.4.0 New! Complete TypeScript refactor with type safety and modular architecture
+- 📈 **Usage Statistics**: v1.4.0 New! Record usage statistics with export and reset functionality
 
 ## 📦 Installation
+
+### System Requirements
+
+- **Node.js**: 18.0.0 or higher
+- **npm**: 8.0.0 or higher (or yarn 1.22+)
+- **Operating System**: Windows, macOS, Linux
 
 ### From NPM (Recommended)
 
@@ -30,8 +49,11 @@ npm install -g switch-claude-cli
 git clone https://github.com/yak33/switch-claude-cli.git
 cd switch-claude-cli
 npm install
+npm run build
 npm link
 ```
+
+**Note**: Starting from v1.4.0, the project uses TypeScript and requires building before installation.
 
 ## 🚀 Quick Start
 
@@ -99,6 +121,9 @@ switch-claude 1
 
 # Only set environment variables without starting claude
 switch-claude -e 1
+
+# View version and check for updates
+switch-claude --version
 ```
 
 ### Detection and Caching
@@ -130,6 +155,82 @@ switch-claude --set-default 1
 switch-claude --clear-default
 ```
 
+### Configuration Backup & Restore 📦 v1.3.0
+
+```bash
+# Export configuration to file (automatically adds timestamp)
+switch-claude --export
+
+# Export to specified file
+switch-claude --export my-providers.json
+
+# Import configuration from file (replaces existing configuration)
+switch-claude --import backup.json
+
+# Import and merge (doesn't overwrite existing providers with same name)
+switch-claude --import new-providers.json --merge
+
+# Backup to system directory (~/.switch-claude/backups/)
+switch-claude --backup
+
+# View all backups
+switch-claude --list-backups
+```
+
+**Features**:
+
+- 🔒 Automatically backs up original configuration before importing
+- 🔄 Supports merge import to avoid overwriting existing configurations
+- 📅 Export files include version and timestamp information
+- 🗑️ Automatically cleans up old backups (keeps latest 10)
+- 📁 Backups stored in `~/.switch-claude/backups/` directory
+
+### Version Updates 🆕 v1.3.0
+
+```bash
+# View current version and check for updates
+switch-claude --version
+# or
+switch-claude -V
+
+# Manually check for updates
+switch-claude --check-update
+```
+
+**Automatic Update Reminders**:
+
+- 🔔 Automatically checks for new versions on each run (checks every 6 hours)
+- 📦 If a new version is available, displays a prominent yellow border notification
+- 🚀 Provides convenient update commands
+
+### Usage Statistics 📊 v1.4.0
+
+```bash
+# View usage statistics
+switch-claude --stats
+
+# Export statistics data to file
+switch-claude --export-stats
+switch-claude --export-stats my-stats.json
+
+# Reset all statistics data
+switch-claude --reset-stats
+```
+
+**Statistics Features**:
+
+- 📈 **Command Usage Stats**: Records frequency and timing of each command usage
+- 🎯 **Provider Performance Stats**: Tracks success rate and response time for each API provider
+- ⏰ **24-Hour Usage Distribution**: Visualizes usage time distribution
+- 🐛 **Error Statistics Analysis**: Records and analyzes various error types
+- 📤 **Data Export**: Supports exporting statistics data to JSON files
+- 🔄 **Data Reset**: Supports clearing all statistics data
+
+**Statistics Data Storage**:
+- Statistics data is stored in `~/.switch-claude/stats.json`
+- Data is automatically saved, no manual operation required
+- Statistics data is preserved during reinstallation or upgrades
+
 ### Help Information
 
 ```bash
@@ -142,14 +243,24 @@ switch-claude --help
 | Option                   | Alias | Description                                                 |
 | ------------------------ | ----- | ----------------------------------------------------------- |
 | `--help`                 | `-h`  | Show help information                                       |
-| `--refresh`              | `-r`  | Force cache refresh and re-check all providers              |
+| `--version`              | `-V`  | Show version information and check for updates             |
+| `--refresh`              | `-r`  | Force cache refresh and re-check all providers             |
 | `--verbose`              | `-v`  | Display detailed debugging information                      |
-| `--list`                 | `-l`  | List providers without starting the claude CLI              |
+| `--list`                 | `-l`  | List providers without starting the claude CLI             |
 | `--env-only`             | `-e`  | Only set environment variables, do not start the claude CLI |
 | `--add`                  |       | Add a new provider                                          |
 | `--remove <number>`      |       | Remove a provider by its number                             |
-| `--set-default <number>` |       | Set a provider as the default by its number                 |
-| `--clear-default`        |       | Clear the default provider setting                          |
+| `--set-default <number>` |       | Set a provider as the default by its number                |
+| `--clear-default`        |       | Clear the default provider setting (manual selection required) |
+| `--check-update`         |       | Manually check for version updates                         |
+| `--export [filename]`    |       | Export configuration to file                               |
+| `--import <filename>`    |       | Import configuration from file                             |
+| `--merge`                |       | Use with --import to merge instead of replace             |
+| `--backup`               |       | Backup current configuration to system directory          |
+| `--list-backups`         |       | List all backup files                                      |
+| `--stats`                |       | Display usage statistics information                       |
+| `--export-stats [filename]` |   | Export statistics data to file                            |
+| `--reset-stats`          |       | Reset all statistics data                                  |
 
 ## 📁 Configuration Files
 
@@ -158,7 +269,11 @@ switch-claude --help
 ```
 ~/.switch-claude/
 ├── providers.json    # API provider configuration
-└── cache.json        # Detection result cache
+├── cache.json        # Detection result cache
+├── stats.json        # Usage statistics data (v1.4.0+)
+└── backups/          # Backup files directory
+    ├── backup-2024-09-22T10-30-00.json
+    └── backup-2024-09-22T14-15-30.json
 ```
 
 **Configuration Directory Location**:
@@ -179,6 +294,13 @@ switch-claude --help
   }
 ]
 ```
+
+### Configuration Security
+
+- **Automatic Creation**: Automatically creates configuration directory and example files on first run
+- **User Directory**: Configuration files stored in user home directory to avoid permission issues
+- **API Key Protection**: Keys are partially masked when displayed (only first 12 characters shown)
+- **Cache Isolation**: Each user's cache files are stored independently
 
 ## 🎯 Usage Scenarios
 
@@ -272,15 +394,55 @@ Common errors and their solutions:
 
 ## 🔒 Security Notes
 
-- **Configuration Isolation**: Config files are stored in `~/.switch-claude/`, keeping them separate for each user.
-- **API Key Protection**: Keys are partially masked (only the first 12 characters are shown) in the console output.
-- **File Permissions**: On Unix-like systems, it's recommended to set secure file permissions:
+### Configuration File Security
+
+- **User Directory Isolation**: Configuration files stored in `~/.switch-claude/`, each user independent
+- **Automatic Initialization**: Automatically creates configuration directory and example files on first run
+- **API Key Protection**: Keys are partially masked when displayed (only first 12 characters shown)
+- **File Permissions**: On Unix systems, it's recommended to set appropriate file permissions:
   ```bash
-  chmod 700 ~/.switch-claude          # Only owner can access the directory
+  chmod 700 ~/.switch-claude          # Only owner can access directory
   chmod 600 ~/.switch-claude/*        # Only owner can read/write files
   ```
-- ⚠️ **Rotate API keys** periodically for better security.
-- ⚠️ Be **cautious** when sharing your configuration file or screenshots.
+
+### Data Security
+
+- ✅ Configuration files stored in user directory, won't affect other users
+- ✅ Cache files stored independently, avoiding conflicts
+- ✅ Sensitive information not logged
+- ⚠️ **Regularly rotate** API keys for security
+- ⚠️ Be **cautious** when sharing configuration files or screenshots
+
+## 🔧 Development
+
+### Code Standards
+
+```bash
+# Run ESLint checks
+npm run lint
+
+# Auto-fix ESLint issues
+npm run lint:fix
+
+# Run Prettier formatting
+npm run format
+
+# Check Prettier formatting
+npm run format:check
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Test coverage
+npm run test:coverage
+```
 
 ## 🤝 Contributing
 
@@ -298,7 +460,11 @@ A: Use the `switch-claude --add` command and follow the prompts.
 
 ### Q: How do I back up my configuration?
 
-A: Simply copy the `~/.switch-claude/providers.json` file.
+A: There are multiple ways:
+
+- Use `switch-claude --export` to export to a file
+- Use `switch-claude --backup` to automatically backup to system directory
+- Manually copy the `~/.switch-claude/providers.json` file
 
 ### Q: Which platforms are supported?
 
@@ -306,14 +472,19 @@ A: Windows, macOS, and Linux are all supported.
 
 ### Q: How do I update the tool?
 
-A: Use `npm update -g switch-claude-cli` (for global install) or `git pull && npm install` (for source install).
+A: The tool will automatically remind you to update! You can also:
+
+- Run `switch-claude --version` to check if there's a new version
+- Run `switch-claude --check-update` to manually check for updates
+- Use `npm update -g switch-claude-cli` to update to the latest version
 
 ### Q: Can I delete the cache file?
 
-A: Yes. Deleting `cache.json` is safe. The tool will simply re-run the availability checks next time.
+A: Yes. Deleting `cache.json` won't affect functionality, it will just re-detect on the next run.
 
 ---
 
-**Project Repository**: [GitHub](https://github.com/yak33/switch-claude-cli)
-**Report an Issue**: [Issues](https://github.com/yak33/switch-claude-cli/issues)
-**NPM Package**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)
+**Project Repository**: [GitHub](https://github.com/yak33/switch-claude-cli)  
+**Report an Issue**: [Issues](https://github.com/yak33/switch-claude-cli/issues)  
+**NPM Package**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)  
+**Changelog**: [CHANGELOG.md](CHANGELOG.md)
