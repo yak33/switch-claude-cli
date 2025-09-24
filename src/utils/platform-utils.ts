@@ -176,7 +176,7 @@ export class PlatformUtils {
     const nodeVersion = process.version;
     let osRelease: string | undefined;
 
-        try {
+    try {
       // 使用动态 require 来避免 ESM 导入问题
       const os = eval('require')('os');
       osRelease = os.release();
