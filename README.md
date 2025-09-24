@@ -9,6 +9,10 @@
 
 一个智能的 Claude API Provider 切换工具，帮助你在多个第三方 Claude API 服务之间快速切换。
 
+## 🌍 多语言文档
+
+**[🇨🇳 中文](README.md)** | **[🇺🇸 English](README.en.md)** | **[🇯🇵 日本語](README.ja.md)**
+
 👉 开发初衷见我的微信公众号文章：[我受够了复制粘贴 Claude Code API ，于是写了个工具，3秒自动切换](https://mp.weixin.qq.com/s/5A5eFc-l6GHBu_qxuLdtIQ)
 
 ## 📋 文档和更新
