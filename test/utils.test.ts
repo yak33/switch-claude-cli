@@ -3,11 +3,11 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { ValidationUtils } from '../src/utils/validation.ts';
-import { CliParser } from '../src/cli/cli-parser.ts';
-import { FileUtils } from '../src/utils/file-utils.ts';
-import { CacheManager } from '../src/core/cache-manager.ts';
-import type { TestResult } from '../src/types/index.ts';
+import { ValidationUtils } from '../src/utils/validation.js';
+import { CliParser } from '../src/cli/cli-parser.js';
+import { FileUtils } from '../src/utils/file-utils.js';
+import { CacheManager } from '../src/core/cache-manager.js';
+import type { TestResult } from '../src/types/index.js';
 
 describe('ValidationUtils', () => {
   it('accepts a valid provider', () => {
@@ -42,7 +42,7 @@ describe('ValidationUtils', () => {
 
     const invalid: unknown[] = [];
     const invalidResult = ValidationUtils.validateProviders(invalid);
-    expect(invalidResult.some((msg) => msg.includes('ÅäÖÃÎÄ¼þÎª¿Õ'))).toBe(true);
+    expect(invalidResult.some((msg) => msg.includes('é…ç½®æ–‡ä»¶ä¸ºç©º'))).toBe(true);
   });
 
   it('parses provider indices with bounds checking', () => {

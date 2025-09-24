@@ -121,7 +121,11 @@ export class ConfigManager {
 
       if (Array.isArray(parsed)) {
         importProviders = parsed as Provider[];
-      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as ExportData).providers)) {
+      } else if (
+        parsed &&
+        typeof parsed === 'object' &&
+        Array.isArray((parsed as ExportData).providers)
+      ) {
         importProviders = (parsed as ExportData).providers;
       }
 

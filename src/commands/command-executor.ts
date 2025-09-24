@@ -103,7 +103,11 @@ export class CommandExecutor {
         options.list ||
         options.add ||
         ((options.remove || options.setDefault) && !options.providerIndex) ||
-        (!options.list && !options.add && !options.remove && !options.setDefault && !options.clearDefault);
+        (!options.list &&
+          !options.add &&
+          !options.remove &&
+          !options.setDefault &&
+          !options.clearDefault);
 
       if (shouldShowList) {
         console.log('📋 配置的 Provider 列表：\n');
@@ -263,7 +267,10 @@ export class CommandExecutor {
 
       if (!options.verbose) {
         // 非详细模式下显示进度条
-        const progress = new ProgressIndicator({ total: providers.length, message: '正在检测 API 可用性' });
+        const progress = new ProgressIndicator({
+          total: providers.length,
+          message: '正在检测 API 可用性',
+        });
         progress.start();
 
         const testPromises = providers.map(async (p, i) => {
@@ -299,7 +306,9 @@ export class CommandExecutor {
 
           console.log(`🔍 [${i + 1}] ${p.name}: 开始检测...`);
           const result = await this.apiTester.testProvider(p, true);
-          console.log(`🔍 [${i + 1}] ${p.name}: 检测完成 - ${result.available ? '可用' : '不可用'}`);
+          console.log(
+            `🔍 [${i + 1}] ${p.name}: 检测完成 - ${result.available ? '可用' : '不可用'}`
+          );
 
           return result;
         });
@@ -326,14 +335,18 @@ export class CommandExecutor {
         // 如果测试结果不存在，创建一个默认的失败结果
         console.log(`❌ [${i + 1}] ${p.name} 不可用 - 测试结果缺失`);
         StatsManager.recordProviderUse(p.baseUrl, false);
-        return { ...p, ok: false, testResult: {
-          available: false,
-          status: null,
-          endpoint: '/v1/messages',
-          responseTime: null,
-          supportedModels: [],
-          error: '测试结果缺失',
-        }};
+        return {
+          ...p,
+          ok: false,
+          testResult: {
+            available: false,
+            status: null,
+            endpoint: '/v1/messages',
+            responseTime: null,
+            supportedModels: [],
+            error: '测试结果缺失',
+          },
+        };
       }
 
       const isAvailable = testResult.available;
@@ -486,7 +499,7 @@ export class CommandExecutor {
 
       // 不返回结果，让程序继续运行等待Claude进程结束
       console.log('✅ Claude 已启动');
-      
+
       // 返回一个永不resolve的Promise，让程序等待Claude进程结束
       return new Promise(() => {
         // 这个Promise永远不会resolve，程序会一直等待直到Claude进程退出并调用process.exit()
@@ -544,7 +557,9 @@ export class CommandExecutor {
   ): Promise<CommandResult> {
     // 不允许删除最后一个 Provider，避免保存时报“配置文件为空”且信息重复
     if (providers.length <= 1) {
-      return this.createErrorResult('无法删除：至少需要一个 provider（请先添加新的 provider 后再删除）');
+      return this.createErrorResult(
+        '无法删除：至少需要一个 provider（请先添加新的 provider 后再删除）'
+      );
     }
 
     const validation = ValidationUtils.validateProviderIndex(indexStr, providers.length);
@@ -770,9 +785,8 @@ export class CommandExecutor {
    * 执行导出统计命令
    */
   private executeExportStatsCommand(filePath?: string): CommandResult {
-    const targetPath = filePath && filePath.trim() !== ''
-      ? filePath
-      : StatsManager.generateExportFilename();
+    const targetPath =
+      filePath && filePath.trim() !== '' ? filePath : StatsManager.generateExportFilename();
     const exportedPath = StatsManager.exportStats(targetPath);
 
     if (exportedPath) {

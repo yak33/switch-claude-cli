@@ -279,7 +279,7 @@ export class CliInterface {
           name: 'name',
           message: '请输入 Provider 名称:',
           default: '我的Claude服务',
-          validate: (input: string) => input.trim() ? true : '名称不能为空',
+          validate: (input: string) => (input.trim() ? true : '名称不能为空'),
         },
         {
           type: 'input',

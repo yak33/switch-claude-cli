@@ -143,8 +143,10 @@ export class FileUtils {
       const currentDir = path.dirname(new URL(import.meta.url).pathname);
 
       // 在Windows上，需要处理路径格式
-      const normalizedDir = process.platform === 'win32' && currentDir.startsWith('/')
-        ? currentDir.slice(1) : currentDir;
+      const normalizedDir =
+        process.platform === 'win32' && currentDir.startsWith('/')
+          ? currentDir.slice(1)
+          : currentDir;
 
       // 从当前文件位置向上查找package.json
       let packagePath = path.resolve(normalizedDir, '../..', 'package.json');

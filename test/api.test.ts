@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import http from 'http';
 
-import { ApiTester } from '../src/core/api-tester.ts';
-import type { Provider } from '../src/types/index.ts';
+import { ApiTester } from '../src/core/api-tester.js';
+import type { Provider } from '../src/types/index.js';
 
 let server: http.Server;
 let serverUrl: string;
@@ -92,7 +92,7 @@ describe('ApiTester', () => {
 
     expect(result.available).toBe(true);
     expect(result.status).toBe(401);
-    expect(result.error).toBe('ÈÏÖ¤Ê§°Ü£¬Çë¼ì²éAPI Key');
+    expect(result.error).toBe('è®¤è¯å¤±è´¥ï¼Œè¯·æ£€æŸ¥API Key');
     expect(result.supportedModels).toHaveLength(0);
   });
 
@@ -101,7 +101,7 @@ describe('ApiTester', () => {
 
     expect(result.available).toBe(true);
     expect(result.status).toBe(429);
-    expect(result.error).toBe('ÇëÇóÆµÂÊ³¬ÏÞ£¬·þÎñ¿ÉÓÃ');
+    expect(result.error).toBe('è¯·æ±‚é¢‘çŽ‡è¶…é™ï¼ŒæœåŠ¡å¯ç”¨');
   });
 
   it('indicates unsupported model responses', async () => {
@@ -109,7 +109,7 @@ describe('ApiTester', () => {
 
     expect(result.available).toBe(true);
     expect(result.status).toBe(422);
-    expect(result.error).toBe('Ä£ÐÍ²»Ö§³Ö');
+    expect(result.error).toBe('æ¨¡åž‹ä¸æ”¯æŒ');
   });
 
   it('treats connection failures as unavailable providers', async () => {

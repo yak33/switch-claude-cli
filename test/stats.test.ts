@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { StatsManager } from '../src/core/stats-manager.ts';
+import { StatsManager } from '../src/core/stats-manager.js';
 
 const originalStatsPath = (StatsManager as unknown as { statsFile: string }).statsFile;
 let tempDir: string;

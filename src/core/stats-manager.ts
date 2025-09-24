@@ -146,7 +146,11 @@ export class StatsManager {
     this.saveStats(stats);
   }
 
-  static recordProviderUse(identifier: string, success: boolean = true, responseTime?: number | null): void {
+  static recordProviderUse(
+    identifier: string,
+    success: boolean = true,
+    responseTime?: number | null
+  ): void {
     const stats = this.loadStats();
 
     if (!stats.providers[identifier]) {
@@ -259,13 +263,17 @@ export class StatsManager {
     console.log(`  • 总使用次数: ${summary.totalUses} 次`);
     console.log(`  • 使用天数: ${summary.daysUsed} 天`);
     console.log(`  • 日均使用: ${summary.avgUsesPerDay} 次`);
-    console.log(`  • 最后使用: ${summary.lastUse ? new Date(summary.lastUse).toLocaleString('zh-CN') : '未知'}`);
+    console.log(
+      `  • 最后使用: ${summary.lastUse ? new Date(summary.lastUse).toLocaleString('zh-CN') : '未知'}`
+    );
 
     if (summary.topProviders.length > 0) {
       console.log('\n🏆 最常用的 Providers：');
       summary.topProviders.forEach((p, index) => {
         console.log(`  ${index + 1}. ${p.name}`);
-        console.log(`     使用 ${p.uses} 次 | 成功率 ${p.successRate}% | 平均响应 ${p.avgResponseTime}ms`);
+        console.log(
+          `     使用 ${p.uses} 次 | 成功率 ${p.successRate}% | 平均响应 ${p.avgResponseTime}ms`
+        );
       });
     }
 
