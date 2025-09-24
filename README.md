@@ -14,10 +14,6 @@
 ## 📋 文档和更新
 
 - 📄 **[更新日志](CHANGELOG.md)** - 查看所有版本更新记录
-- 🚀 **[TypeScript重构分支](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor)** - 全新的模块化架构正在开发中！
-  - ✨ 完整的TypeScript类型安全
-  - 🏗️ 模块化架构，更易维护和扩展
-  - 🧪 更好的测试支持
 
 ## ✨ 功能特性
 
@@ -27,9 +23,11 @@
 - 🔧 **配置管理**：完整的 provider 增删改查功能
 - 📊 **详细日志**：可选的详细模式显示响应时间和错误信息
 - 🛡️ **错误处理**：完善的错误处理和用户友好的提示信息
-- 🔔 **版本更新**：v1.3.0 新增！自动提醒用户更新到最新版本
-- 📦 **配置备份**：v1.3.0 新增！支持导出、导入、备份和恢复配置
-- 📺 **优化显示**：v1.3.3 新增！显示完整API名称，智能适应终端宽度
+- 🔔 **版本更新**：自动提醒用户更新到最新版本
+- 📦 **配置备份**：支持导出、导入、备份和恢复配置
+- 📺 **优化显示**：显示完整API名称，智能适应终端宽度
+- ✨ **TypeScript重构**：v1.4.0 新增！完全 TypeScript 重构，类型安全，模块化架构
+- 📈 **使用统计**：v1.4.0 新增！记录使用统计，支持导出和重置功能
 
 ## 📦 安装
 
@@ -38,6 +36,7 @@
 ```bash
 npm install -g switch-claude-cli
 ```
+
 
 ### 从源码安装
 
@@ -447,10 +446,10 @@ A: 工具会自动提醒你更新！你也可以：
 
 A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次运行会重新检测。
 
+
 ---
 
-**项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)
-**问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)
-**NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)
+**项目地址**: [GitHub](https://github.com/yak33/switch-claude-cli)  
+**问题反馈**: [Issues](https://github.com/yak33/switch-claude-cli/issues)  
+**NPM 包**: [switch-claude-cli](https://www.npmjs.com/package/switch-claude-cli)  
 **更新日志**: [CHANGELOG.md](CHANGELOG.md)
-**TypeScript重构**: [feature/typescript-refactor](https://github.com/yak33/switch-claude-cli/tree/feature/typescript-refactor) 🚀
