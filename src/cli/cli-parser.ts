@@ -211,7 +211,8 @@ export class CliParser {
    * 显示帮助信息
    */
   static showHelp(): void {
-    console.log(OutputFormatter.formatHelpMessage());
+    const pkg = FileUtils.getPackageInfo();
+    console.log(OutputFormatter.formatHelpMessage(pkg?.version));
   }
 
   /**

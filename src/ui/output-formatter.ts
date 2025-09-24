@@ -76,49 +76,54 @@ export class OutputFormatter {
   /**
    * 格式化帮助信息
    */
-  static formatHelpMessage(): string {
+  static formatHelpMessage(version?: string): string {
     return `
-Switch Claude CLI - 智能 Claude API Provider 切换工具
+📚 Switch Claude CLI - Claude API Provider 切换工具${version ? ` (v${version})` : ''}
 
 用法:
-  switch-claude [选项] [provider编号]
+  switch-claude [选项] [编号]
 
 选项:
-  -h, --help              显示帮助信息
-  -V, --version           显示版本信息并检查更新
-  -r, --refresh           强制刷新缓存，重新检测所有 provider
-  -v, --verbose           显示详细的调试信息
-  -l, --list              只列出 providers，不启动 claude
-  -e, --env-only          只设置环境变量，不启动 claude
-
-Provider 管理:
-  --add                   添加新的 provider
-  --remove <编号>         删除指定编号的 provider
-  --set-default <编号>    设置指定编号的 provider 为默认
-  --clear-default         清除默认 provider
-
-配置管理:
-  --export [文件名]       导出配置到文件
-  --import <文件名>       从文件导入配置
-  --merge                 与 --import 配合使用，合并而不是替换
-  --backup                备份当前配置到系统目录
-  --list-backups          列出所有备份文件
-
-更新和统计:
-  --check-update          手动检查版本更新
-  --stats                 显示使用统计
+  -h, --help          显示帮助信息
+  -V, --version       显示版本信息并检查更新
+  -r, --refresh       强制刷新缓存，重新检测所有 provider
+  -v, --verbose       显示详细的调试信息
+  -l, --list          只列出 providers 不启动 claude
+  -e, --env-only      只设置环境变量，不启动 claude
+  --add               添加新的 provider
+  --remove <编号>     删除指定编号的 provider
+  --set-default <编号> 设置指定编号的 provider 为默认
+  --clear-default     清除默认 provider（每次都需要手动选择）
+  --check-update      手动检查版本更新
+  --export [文件名]   导出配置到文件
+  --import <文件名>   从文件导入配置
+  --merge             导入时合并而不是替换（与 --import 配合使用）
+  --backup            备份当前配置
+  --list-backups      列出所有备份
+  --stats             显示使用统计
   --export-stats [文件名] 导出统计数据
-  --reset-stats           重置统计数据
+  --reset-stats       重置统计数据
+
+参数:
+  编号                直接选择指定编号的 provider（跳过交互选择）
 
 示例:
-  switch-claude                    # 交互式选择 provider
-  switch-claude 1                  # 直接选择编号为 1 的 provider
-  switch-claude -e 1               # 只设置环境变量，不启动 claude
-  switch-claude --refresh -v       # 强制刷新并显示详细信息
-  switch-claude --add              # 添加新的 provider
-  switch-claude --export backup.json  # 导出配置到文件
-
-更多信息请访问: https://github.com/yak33/switch-claude-cli
+  switch-claude           # 交互式选择
+  switch-claude 1         # 直接选择编号为 1 的 provider
+  switch-claude --refresh # 强制刷新缓存后选择
+  switch-claude -v 2      # 详细模式选择编号为 2 的 provider
+  switch-claude --list    # 只列出所有 providers
+  switch-claude --add     # 添加新的 provider
+  switch-claude --remove 2 # 删除编号为 2 的 provider
+  switch-claude --set-default 1 # 设置编号为 1 的 provider 为默认
+  switch-claude --clear-default  # 清除默认设置
+  switch-claude -e 1      # 只设置环境变量，不启动 claude
+  switch-claude --export  # 导出配置到带时间戳的文件
+  switch-claude --export my-config.json # 导出到指定文件
+  switch-claude --import backup.json # 导入配置（替换）
+  switch-claude --import backup.json --merge # 导入配置（合并）
+  switch-claude --backup  # 备份当前配置
+  switch-claude --list-backups # 查看所有备份
 `;
   }
 

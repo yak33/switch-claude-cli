@@ -94,11 +94,23 @@ export class CommandExecutor {
         return this.executeListBackupsCommand();
       }
 
-      // 显示provider列表 - 按照原版逻辑，所有其他命令都需要先显示列表
-      console.log('📋 配置的 Provider 列表：\n');
-      providers.forEach((p, i) => {
-        console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
-      });
+      // 选择性显示 provider 列表：
+      // - --list: 必须显示
+      // - --add: 作为参考显示（与原版一致）
+      // - --remove/--set-default: 仅当未提供索引时显示，便于用户查看编号
+      // - 主流程（无子命令时）依旧显示列表，再进入检测/选择流程
+      const shouldShowList =
+        options.list ||
+        options.add ||
+        ((options.remove || options.setDefault) && !options.providerIndex) ||
+        (!options.list && !options.add && !options.remove && !options.setDefault && !options.clearDefault);
+
+      if (shouldShowList) {
+        console.log('📋 配置的 Provider 列表：\n');
+        providers.forEach((p, i) => {
+          console.log(`[${i + 1}] ${p.name} (${p.baseUrl})${p.default ? ' ⭐默认' : ''}`);
+        });
+      }
 
       // 处理需要显示provider列表的命令
       if (options.list) {
@@ -522,6 +534,11 @@ export class CommandExecutor {
     providers: Provider[],
     indexStr: string
   ): Promise<CommandResult> {
+    // 不允许删除最后一个 Provider，避免保存时报“配置文件为空”且信息重复
+    if (providers.length <= 1) {
+      return this.createErrorResult('无法删除：至少需要一个 provider（请先添加新的 provider 后再删除）');
+    }
+
     const validation = ValidationUtils.validateProviderIndex(indexStr, providers.length);
     if (!validation.valid) {
       return this.createErrorResult(validation.error || '无效索引');

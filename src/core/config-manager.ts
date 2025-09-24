@@ -35,12 +35,12 @@ export class ConfigManager {
       // 验证配置
       const errors = ValidationUtils.validateProviders(providers);
       if (errors.length > 0) {
-        throw new Error(`配置验证失败:\\n${errors.join('\\n')}`);
+        throw new Error(`配置验证失败:\n${errors.join('\n')}`);
       }
 
       return providers;
     } catch (error) {
-      throw new Error(`加载配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -61,7 +61,7 @@ export class ConfigManager {
       // 保存配置
       fs.writeFileSync(this.configPath, JSON.stringify(providers, null, 2));
     } catch (error) {
-      throw new Error(`保存配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -141,7 +141,7 @@ export class ConfigManager {
       await this.saveProviders(newProviders);
       return newProviders.length;
     } catch (error) {
-      throw new Error(`导入配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -172,7 +172,7 @@ export class ConfigManager {
 
       return backupFile;
     } catch (error) {
-      throw new Error(`备份配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(error instanceof Error ? error.message : String(error));
     }
   }
 
