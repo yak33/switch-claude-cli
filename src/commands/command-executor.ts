@@ -1,7 +1,7 @@
-import { BaseCommand } from './base-command.js';
 import { ConfigManager } from '../core/config-manager.js';
 import { ApiTester } from '../core/api-tester.js';
 import { CacheManager } from '../core/cache-manager.js';
+import { StatsManager } from '../core/stats-manager.js';
 import { CliInterface } from '../ui/cli-interface.js';
 import { OutputFormatter } from '../ui/output-formatter.js';
 import { ProgressIndicator } from '../ui/progress-indicator.js';
@@ -325,6 +325,7 @@ export class CommandExecutor {
       if (!testResult) {
         // 如果测试结果不存在，创建一个默认的失败结果
         console.log(`❌ [${i + 1}] ${p.name} 不可用 - 测试结果缺失`);
+        StatsManager.recordProviderUse(p.baseUrl, false);
         return { ...p, ok: false, testResult: {
           available: false,
           status: null,
@@ -358,6 +359,7 @@ export class CommandExecutor {
       }
 
       console.log(statusText);
+      StatsManager.recordProviderUse(p.baseUrl, isAvailable, testResult.responseTime ?? null);
       return { ...p, ok: isAvailable, testResult };
     });
 
@@ -413,7 +415,10 @@ export class CommandExecutor {
   /**
    * 启动 Claude
    */
-  private async launchClaude(provider: Provider, envOnly: boolean = false): Promise<CommandResult> {
+  private async launchClaude(
+    provider: Provider & { testResult?: TestResult },
+    envOnly: boolean = false
+  ): Promise<CommandResult> {
     // 设置环境变量 - 使用原版的环境变量名称
     process.env.ANTHROPIC_BASE_URL = provider.baseUrl;
     process.env.ANTHROPIC_AUTH_TOKEN = provider.key;
@@ -422,6 +427,9 @@ export class CommandExecutor {
     console.log(`\n🔧 环境变量已设置:`);
     console.log(`   ANTHROPIC_BASE_URL=${provider.baseUrl}`);
     console.log(`   ANTHROPIC_AUTH_TOKEN=${provider.key.slice(0, 12)}...`);
+
+    const responseTime = provider.testResult?.responseTime ?? null;
+    StatsManager.recordProviderUse(provider.name, true, responseTime);
 
     if (envOnly) {
       console.log(`\n📋 环境变量设置完成！你可以手动运行 claude 命令`);
@@ -753,8 +761,8 @@ export class CommandExecutor {
    * 执行统计命令
    */
   private executeStatsCommand(verbose: boolean = false): CommandResult {
-    console.log('📊 使用统计功能暂未实现');
-    console.log('💡 此功能将在后续版本中添加');
+    StatsManager.cleanupOldStats();
+    StatsManager.displayStats(verbose);
     return this.createSuccessResult();
   }
 
@@ -762,18 +770,24 @@ export class CommandExecutor {
    * 执行导出统计命令
    */
   private executeExportStatsCommand(filePath?: string): CommandResult {
-    console.log('📊 导出统计功能暂未实现');
-    console.log('💡 此功能将在后续版本中添加');
-    return this.createSuccessResult();
+    const targetPath = filePath && filePath.trim() !== ''
+      ? filePath
+      : StatsManager.generateExportFilename();
+    const exportedPath = StatsManager.exportStats(targetPath);
+
+    if (exportedPath) {
+      return this.createSuccessResult(`统计数据已导出到: ${exportedPath}`);
+    }
+
+    return this.createErrorResult('导出统计数据失败');
   }
 
   /**
    * 执行重置统计命令
    */
   private executeResetStatsCommand(): CommandResult {
-    console.log('📊 重置统计功能暂未实现');
-    console.log('💡 此功能将在后续版本中添加');
-    return this.createSuccessResult();
+    StatsManager.resetStats();
+    return this.createSuccessResult('统计数据已重置');
   }
 
   /**

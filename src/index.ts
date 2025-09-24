@@ -3,6 +3,7 @@
 import { CliParser } from './cli/cli-parser.js';
 import { CommandExecutor } from './commands/command-executor.js';
 import { CliInterface } from './ui/cli-interface.js';
+import { StatsManager } from './core/stats-manager.js';
 
 /**
  * 主入口函数
@@ -15,8 +16,7 @@ async function main(): Promise<void> {
 
     // 记录命令使用（统计功能）
     const commandName = getCommandName(options);
-    // 暂时注释掉统计功能，因为需要重构
-    // recordCommand(commandName);
+    StatsManager.recordCommand(commandName);
 
     // 处理帮助和版本
     if (showHelp) {

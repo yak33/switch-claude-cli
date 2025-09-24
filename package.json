@@ -50,7 +50,7 @@
   },
   "homepage": "https://github.com/yak33/switch-claude-cli#readme",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "inquirer": "^9.0.0",

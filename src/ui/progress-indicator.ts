@@ -50,7 +50,7 @@ export class ProgressIndicator {
     const spinner = this.spinners[this.spinnerIndex % this.spinners.length];
     this.spinnerIndex++;
 
-    let line = `🔍 检测API ${spinner} [${this.completed}/${this.total}]`;
+    let line = `🔍 检测中 ${spinner} [${this.completed}/${this.total}]`;
 
     // 显示当前正在处理的API完整名称
     if (this.completedItems.length > 0) {

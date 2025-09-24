@@ -52,7 +52,7 @@ export class ConfigManager {
       // 验证配置
       const errors = ValidationUtils.validateProviders(providers);
       if (errors.length > 0) {
-        throw new Error(`配置验证失败:\\n${errors.join('\\n')}`);
+        throw new Error(`配置验证失败:\n${errors.join('\n')}`);
       }
 
       // 确保目录存在
@@ -115,9 +115,21 @@ export class ConfigManager {
     try {
       // 读取导入文件
       const content = fs.readFileSync(inputPath, 'utf-8');
-      const importData = JSON.parse(content) as ExportData;
+      const parsed = JSON.parse(content) as unknown;
 
-      let newProviders = importData.providers;
+      let importProviders: Provider[] | undefined;
+
+      if (Array.isArray(parsed)) {
+        importProviders = parsed as Provider[];
+      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as ExportData).providers)) {
+        importProviders = (parsed as ExportData).providers;
+      }
+
+      if (!importProviders) {
+        throw new Error('导入文件格式无效：未找到 providers 数组');
+      }
+
+      let newProviders = [...importProviders];
 
       if (options.merge) {
         // 合并模式：与现有配置合并
