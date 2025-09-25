@@ -33,8 +33,8 @@ export class CommandExecutor {
    */
   async executeMain(options: CliOptions, providerIndex?: string): Promise<CommandResult> {
     try {
-      // 检查更新（后台执行）
-      this.checkForUpdates();
+      // 检查更新
+      await this.checkForUpdates();
 
       // 优先处理不需要配置文件的命令
       if (options.stats) {
@@ -750,25 +750,34 @@ export class CommandExecutor {
   /**
    * 检查更新
    */
-  private checkForUpdates(): void {
+  private async checkForUpdates(): Promise<void> {
     try {
-      // 这里需要从package.json读取版本信息
-      // 由于在模块化环境中，我们需要动态导入
-      import('../../package.json', { assert: { type: 'json' } })
-        .then(({ default: pkg }) => {
-          const notifier = updateNotifier({
-            pkg,
-            updateCheckInterval: 1000 * 60 * 60 * 6, // 6小时
-            shouldNotifyInNpmScript: false,
-          });
+      const pkg = await this.getPackageInfo();
 
-          if (notifier.update) {
-            CliInterface.showUpdateNotification(notifier.update.current, notifier.update.latest);
-          }
-        })
-        .catch(() => {
-          // 忽略更新检查错误
-        });
+      if (!pkg) {
+        return;
+      }
+
+      const notifier = updateNotifier({
+        pkg,
+        updateCheckInterval: 0,
+        shouldNotifyInNpmScript: false,
+      });
+
+      if (notifier.update && notifier.update.latest !== notifier.update.current) {
+        CliInterface.showUpdateNotification(notifier.update.current, notifier.update.latest);
+        return;
+      }
+
+      try {
+        const info = await notifier.fetchInfo();
+
+        if (info.latest !== info.current) {
+          CliInterface.showUpdateNotification(info.current, info.latest);
+        }
+      } catch {
+        // 忽略细节错误，避免影响主流程
+      }
     } catch {
       // 忽略更新检查错误
     }
@@ -850,7 +859,7 @@ export class CommandExecutor {
   /**
    * 获取包信息
    */
-  private async getPackageInfo(): Promise<{ version: string } | null> {
+  private async getPackageInfo(): Promise<{ version: string; name: string } | null> {
     return FileUtils.getPackageInfo();
   }
 }
