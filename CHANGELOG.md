@@ -4,6 +4,22 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并且本项目遵守 [语义化版本控制](https://semver.org/lang/zh-CN/)。
 
+## [1.4.1] - 2025-09-25
+
+### 🐛 修复
+
+- 修复在 CLI 中选择 Provider 后启动 `claude` 报 `command not found` 的问题：
+  - 新增对 zsh/bash `alias`/函数的解析，能够解析出 `claude` 的真实可执行路径（例如 `~/.claude/local/claude`）。
+  - 当未解析到绝对路径时，回退使用“登录 + 交互式” shell 启动，确保加载用户的 `zprofile`/`zshrc` 或 `bash_profile`/`bashrc`。
+- 修复环境变量未生效问题：
+  - 在回退到 shell 启动时，内联 `export ANTHROPIC_BASE_URL` 与 `export ANTHROPIC_AUTH_TOKEN`，确保覆盖 shell 中的默认值。
+
+### 🔧 其它
+
+- 优化日志与错误提示，便于排查 PATH 与别名问题。
+
+---
+
 ## [1.4.0] - 2025-09-24
 
 ### 🎉 **重大更新：TypeScript 重构完成**

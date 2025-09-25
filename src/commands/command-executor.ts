@@ -11,6 +11,7 @@ import { FileUtils } from '../utils/file-utils.js';
 import type { Provider, CommandResult, CliOptions, TestResult } from '../types';
 import updateNotifier from 'update-notifier';
 import { spawn } from 'child_process';
+import path from 'node:path';
 
 /**
  * 命令执行器
@@ -456,20 +457,57 @@ export class CommandExecutor {
     // 尝试启动 claude
     console.log(`\n🚀 正在启动 Claude Code...`);
 
-    // 查找并启动 Claude - 使用原版的复杂路径查找逻辑
-    const claudePath = await PlatformUtils.findClaudeCommand();
-    console.log(`🔍 使用 claude 命令路径: ${claudePath || 'claude'}`);
+    // 优先查找绝对路径，其次回退到用户登录 shell 执行
+    const foundPath = await PlatformUtils.findClaudeCommand();
+    const isAbs = foundPath
+      ? PlatformUtils.getPlatform() === 'windows'
+        ? true
+        : path.isAbsolute(foundPath)
+      : false;
+    const claudePath = isAbs ? foundPath : null;
+    if (claudePath) {
+      console.log(`🔍 使用 claude 命令路径: ${claudePath}`);
+    } else {
+      console.log('🔍 使用 claude 命令路径: 未解析到二进制，尝试通过登录 shell 执行');
+    }
 
     try {
+      // 根据是否找到绝对路径，决定启动方式
+      let command = claudePath || '';
+      let args: string[] = [];
+      let useShell = false;
+
+      if (!claudePath) {
+        // 回退：通过用户的默认 shell 以“登录 + 交互”方式执行，确保加载别名/函数
+        const userShell = PlatformUtils.getUserShell();
+        const platform = PlatformUtils.getPlatform();
+        if (platform === 'windows') {
+          // 在 Windows 上使用 cmd 执行（尽量避免对 PowerShell 的依赖）
+          command = userShell; // 通常为 cmd.exe
+          const winCmd = `set "ANTHROPIC_BASE_URL=${provider.baseUrl}" && set "ANTHROPIC_AUTH_TOKEN=${provider.key}" && claude`;
+          args = ['/c', winCmd];
+          useShell = false;
+        } else {
+          command = userShell;
+          // -l 登录 shell（读取 zprofile/profile），-i 交互式（读取 zshrc/bashrc），-c 执行命令
+          const exportCmd = `export ANTHROPIC_BASE_URL="${provider.baseUrl}"; export ANTHROPIC_AUTH_TOKEN="${provider.key}"; claude`;
+          args = ['-l', '-i', '-c', exportCmd];
+          useShell = false;
+        }
+
+        console.log(`🔁 通过登录 shell 启动: ${command} ${args.join(' ')}`);
+      }
+
       // 为 Claude Code 设置正确的 stdin 配置以支持交互
-      const claude = spawn(claudePath || 'claude', [], {
+      const claude = spawn(command || 'claude', args, {
         stdio: ['inherit', 'inherit', 'inherit'], // 继承 stdin, stdout, stderr
         env: process.env,
-        shell: true,
+        shell: useShell,
       });
 
-      claude.on('error', (error) => {
-        if ((error as any).code === 'ENOENT') {
+      claude.on('error', (error: unknown) => {
+        const err = error as { code?: string; message?: string };
+        if (err && err.code === 'ENOENT') {
           console.error(`\n❌ 找不到 'claude' 命令！`);
           console.log(`\n💡 解决方案：`);
           console.log(`   1. 确保 Claude Code 已正确安装`);
@@ -484,8 +522,13 @@ export class CommandExecutor {
           if (paths.length > 5) {
             console.log(`   ... 还有 ${paths.length - 5} 个目录`);
           }
+          if (!claudePath) {
+            console.log('\n🔁 备用方案：你也可以运行 "switch-claude -e <编号>"');
+            console.log('   然后在你的终端手动输入 "claude" 启动。');
+          }
         } else {
-          console.error(`\n❌ 启动 claude 时出错: ${error.message}`);
+          const msg = err && err.message ? err.message : String(error);
+          console.error(`\n❌ 启动 claude 时出错: ${msg}`);
         }
         process.exit(1);
       });

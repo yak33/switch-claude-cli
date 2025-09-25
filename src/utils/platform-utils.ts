@@ -45,24 +45,58 @@ export class PlatformUtils {
    */
   static async findClaudeCommand(): Promise<string | null> {
     const platform = this.getPlatform();
-    const commands =
-      platform === 'windows' ? ['where claude'] : ['which claude', 'command -v claude'];
+    const { execSync } = await import('child_process');
 
-    for (const cmd of commands) {
+    // 1) 常规方式：系统 PATH 中的可执行文件
+    try {
+      const cmd = platform === 'windows' ? 'where claude' : 'which claude';
+      const out = execSync(cmd, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 3000,
+      }).trim();
+      if (out && out.startsWith('/') && out.includes('/')) return out;
+    } catch {
+      // ignore
+    }
+
+    // 2) 更强的方式：在用户默认 shell 的“登录+交互”环境里解析别名/函数
+    if (platform !== 'windows') {
       try {
-        const { execSync } = await import('child_process');
-        const result = execSync(cmd, {
+        const userShell = this.getUserShell();
+        // 优先解析 alias，其次解析 type/whence 输出中的绝对路径
+        const probe = `${userShell} -l -i -c "alias claude || type -a claude || whence -a claude || which claude || command -v claude"`;
+        const out = execSync(probe, {
           encoding: 'utf8',
           stdio: ['ignore', 'pipe', 'ignore'],
-          timeout: 5000,
-        });
+          timeout: 4000,
+        }).trim();
 
-        const claudePath = result.trim();
-        if (claudePath && claudePath !== '') {
-          return claudePath;
+        // 可能的输出样例（不同 shell 会有差异）
+        // 策略：从每一行中提取第一个绝对路径返回
+        const lines = out
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean);
+        for (const line of lines) {
+          const pathMatch = line.match(/(\/[^\s'"`]+)/);
+          if (pathMatch && pathMatch[1]) {
+            return pathMatch[1];
+          }
+
+          // 部分 shell（如 bash）会输出 `claude=...`，此时 path 可能被引号包裹
+          const aliasMatch = line.match(/^(?:alias\s+)?claude=(.*)$/);
+          if (aliasMatch) {
+            const rhsRaw = aliasMatch[1]!.trim();
+            const firstToken = rhsRaw.split(/\s+/)[0] || '';
+            const candidate = firstToken.replace(/^['"`]/, '').replace(/['"`]$/, '');
+            if (candidate.startsWith('/')) {
+              return candidate;
+            }
+          }
         }
       } catch {
-        // 继续尝试下一个命令
+        // ignore
       }
     }
 
@@ -119,6 +153,27 @@ export class PlatformUtils {
       default:
         return ['/usr/local/bin/claude', '/usr/bin/claude'];
     }
+  }
+
+  /**
+   * 获取用户的默认 Shell 路径
+   * 用于在无法直接找到可执行文件时，回退到交互式登录 shell 启动命令
+   */
+  static getUserShell(): string {
+    const platform = this.getPlatform();
+    const envShell = process.env.SHELL;
+
+    if (envShell && envShell.trim() !== '') return envShell;
+
+    if (platform === 'windows') {
+      // 在 Windows 上优先使用 ComSpec（通常为 cmd.exe），后续由调用方决定是否使用 PowerShell
+      return process.env.ComSpec || 'cmd.exe';
+    }
+
+    // macOS 默认 zsh，Linux 默认 bash，最后回退到 /bin/sh
+    if (platform === 'macos') return '/bin/zsh';
+    if (platform === 'linux') return '/bin/bash';
+    return '/bin/sh';
   }
 
   /**
