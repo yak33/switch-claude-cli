@@ -477,7 +477,27 @@ export class CommandExecutor {
       let args: string[] = [];
       let useShell = false;
 
-      if (!claudePath) {
+      if (claudePath) {
+        const platform = PlatformUtils.getPlatform();
+        if (platform === 'windows') {
+          const ext = path.extname(claudePath).toLowerCase();
+          if (ext === '.cmd' || ext === '.bat') {
+            command = 'cmd.exe';
+            args = ['/c', 'claude'];
+          } else if (ext === '.ps1') {
+            command = 'powershell.exe';
+            args = [
+              '-NoProfile',
+              '-ExecutionPolicy',
+              'Bypass',
+              '-File',
+              claudePath,
+            ];
+          }
+        } else {
+          command = claudePath;
+        }
+      } else {
         // 回退：通过用户的默认 shell 以“登录 + 交互”方式执行，确保加载别名/函数
         const userShell = PlatformUtils.getUserShell();
         const platform = PlatformUtils.getPlatform();
@@ -498,10 +518,14 @@ export class CommandExecutor {
         console.log(`🔁 通过登录 shell 启动: ${command} ${args.join(' ')}`);
       }
 
+      const childEnv = { ...process.env };
+      delete childEnv.NODE_OPTIONS;
+      delete (childEnv as Record<string, unknown>).VSCODE_INSPECTOR_OPTIONS;
+
       // 为 Claude Code 设置正确的 stdin 配置以支持交互
       const claude = spawn(command || 'claude', args, {
         stdio: ['inherit', 'inherit', 'inherit'], // 继承 stdin, stdout, stderr
-        env: process.env,
+        env: childEnv,
         shell: useShell,
       });
 
@@ -764,15 +788,25 @@ export class CommandExecutor {
         shouldNotifyInNpmScript: false,
       });
 
-      if (notifier.update && notifier.update.latest !== notifier.update.current) {
-        CliInterface.showUpdateNotification(notifier.update.current, notifier.update.latest);
+      const update = notifier.update;
+      if (
+        update &&
+        update.latest &&
+        update.current &&
+        this.isVersionNewer(update.latest, update.current)
+      ) {
+        CliInterface.showUpdateNotification(update.current, update.latest);
         return;
       }
 
       try {
         const info = await notifier.fetchInfo();
 
-        if (info.latest !== info.current) {
+        if (
+          info.latest &&
+          info.current &&
+          this.isVersionNewer(info.latest, info.current)
+        ) {
           CliInterface.showUpdateNotification(info.current, info.latest);
         }
       } catch {
@@ -781,6 +815,110 @@ export class CommandExecutor {
     } catch {
       // 忽略更新检查错误
     }
+  }
+
+  private isVersionNewer(latest: string, current: string): boolean {
+    const latestInfo = this.parseSemver(latest);
+    const currentInfo = this.parseSemver(current);
+
+    if (!latestInfo || !currentInfo) {
+      return latest !== current;
+    }
+
+    const maxLength = Math.max(latestInfo.core.length, currentInfo.core.length);
+    for (let i = 0; i < maxLength; i++) {
+      const latestPart = latestInfo.core[i] ?? 0;
+      const currentPart = currentInfo.core[i] ?? 0;
+      if (latestPart > currentPart) {
+        return true;
+      }
+      if (latestPart < currentPart) {
+        return false;
+      }
+    }
+
+    const latestPre = latestInfo.prerelease;
+    const currentPre = currentInfo.prerelease;
+
+    if (latestPre.length === 0 && currentPre.length === 0) {
+      return false;
+    }
+    if (latestPre.length === 0) {
+      return true;
+    }
+    if (currentPre.length === 0) {
+      return false;
+    }
+
+    const len = Math.max(latestPre.length, currentPre.length);
+    for (let i = 0; i < len; i++) {
+      const latestId = latestPre[i];
+      const currentId = currentPre[i];
+
+      if (latestId === undefined) {
+        return false;
+      }
+      if (currentId === undefined) {
+        return true;
+      }
+
+      const latestIsNum = /^[0-9]+$/.test(latestId);
+      const currentIsNum = /^[0-9]+$/.test(currentId);
+
+      if (latestIsNum && currentIsNum) {
+        const latestNum = Number.parseInt(latestId, 10);
+        const currentNum = Number.parseInt(currentId, 10);
+        if (latestNum > currentNum) {
+          return true;
+        }
+        if (latestNum < currentNum) {
+          return false;
+        }
+        continue;
+      }
+
+      if (latestIsNum !== currentIsNum) {
+        return !latestIsNum;
+      }
+
+      const comparison = latestId.localeCompare(currentId);
+      if (comparison > 0) {
+        return true;
+      }
+      if (comparison < 0) {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  private parseSemver(
+    version: string
+  ): { core: number[]; prerelease: string[] } | null {
+    if (!version || typeof version !== 'string') {
+      return null;
+    }
+
+    const cleaned = version.split('+')[0]?.trim();
+    if (!cleaned) {
+      return null;
+    }
+
+    const [corePart, prereleasePart] = cleaned.split('-');
+    const coreSegments = corePart
+      .split('.')
+      .map((segment) => Number.parseInt(segment, 10))
+      .map((value) => (Number.isNaN(value) ? 0 : value));
+
+    const prereleaseSegments = prereleasePart
+      ? prereleasePart.split('.').filter((segment) => segment.length > 0)
+      : [];
+
+    return {
+      core: coreSegments,
+      prerelease: prereleaseSegments,
+    };
   }
 
   /**
