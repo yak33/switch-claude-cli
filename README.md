@@ -232,7 +232,7 @@ switch-claude --reset-stats
 - 🔄 **数据重置**：支持清空所有统计数据
 
 **统计数据存储**：
-- 统计数据存储在 `~/.switch-claude/stats.json`
+- 统计数据存储在 `~/.switch-claude/usage-stats.json`
 - 数据会自动保存，无需手动操作
 - 重装或升级时统计数据会保留
 
@@ -275,7 +275,7 @@ switch-claude --help
 ~/.switch-claude/
 ├── providers.json    # API 配置文件
 ├── cache.json       # 检测结果缓存
-├── stats.json       # 使用统计数据 (v1.4.0+)
+├── usage-stats.json       # 使用统计数据 (v1.4.0+)
 └── backups/         # 备份文件目录
     ├── backup-2024-09-22T10-30-00.json
     └── backup-2024-09-22T14-15-30.json
@@ -371,13 +371,13 @@ claude
 ## 🗂️ 缓存机制
 
 - **缓存时长**：5分钟
-- **缓存文件**：`.switch-claude-cache.json`
+- **缓存文件**：`cache.json`
 - **缓存标识**：基于 baseUrl 和 API Key 的后8位
 - **强制刷新**：使用 `--refresh` 参数
 
 ## ❗ 错误处理
 
-### Claude 命令未找到
+{{ ... }}
 
 如果遇到 "spawn claude ENOENT" 错误：
 
@@ -489,7 +489,7 @@ A: 工具会自动提醒你更新！你也可以：
 
 ### Q: 缓存文件可以删除吗？
 
-A: 可以。删除 `.switch-claude-cache.json` 不会影响功能，只是下次运行会重新检测。
+A: 可以。删除 `cache.json` 不会影响功能，只是下次运行会重新检测。
 
 
 ---
