@@ -114,15 +114,20 @@ switch-claude
 
 ### Shortcut Command ⚡
 
-To simplify typing, the tool provides a short command alias `scl`, fully equivalent to `switch-claude`:
+To simplify typing, the tool provides multiple command aliases, fully equivalent to `switch-claude`:
 
 ```bash
-# The following command pairs are equivalent
-switch-claude        <==>  scl
-switch-claude 1      <==>  scl 1
-switch-claude -v     <==>  scl -v
-switch-claude --list <==>  scl --list
+# The following commands are equivalent
+switch-claude        <==>  scl  <==>  ccc
+switch-claude 1      <==>  scl 1      <==>  ccc 1
+switch-claude -v     <==>  scl -v     <==>  ccc -v
+switch-claude --list <==>  scl --list <==>  ccc --list
 ```
+
+**Alias Descriptions**:
+- `switch-claude` - Full command, clear semantics
+- `scl` - Switch CLaude abbreviation
+- `ccc` - Choose Claude CLI abbreviation
 
 ### Basic Usage
 
@@ -131,6 +136,8 @@ switch-claude --list <==>  scl --list
 switch-claude
 # Or
 scl
+# Or
+ccc
 
 # Directly select provider number 1
 scl 1

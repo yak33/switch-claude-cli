@@ -4,6 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并且本项目遵守 [语义化版本控制](https://semver.org/lang/zh-CN/)。
 
+## [1.4.4] - 2025-09-30
+
+### 🚀 新增功能
+
+- **新增命令别名** ⚡：
+  - 新增 `ccc` 命令别名（Choose Claude CLI）
+  - 现在支持三个命令别名：`switch-claude`、`scl`、`ccc`
+  - 所有别名功能完全相同，用户可根据喜好选择
+
+---
+
 ## [1.4.3] - 2025-09-30
 
 ### 🚀 新增功能

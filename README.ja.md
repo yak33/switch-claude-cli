@@ -115,15 +115,20 @@ switch-claude
 
 ### ショートカットコマンド ⚡
 
-入力を簡素化するため、ツールは `switch-claude` と完全に同等な短いコマンドエイリアス `scl` を提供します：
+入力を簡素化するため、ツールは `switch-claude` と完全に同等な複数のコマンドエイリアスを提供します：
 
 ```bash
-# 次のコマンドペアは同等です
-switch-claude        <==>  scl
-switch-claude 1      <==>  scl 1
-switch-claude -v     <==>  scl -v
-switch-claude --list <==>  scl --list
+# 次のコマンドは同等です
+switch-claude        <==>  scl  <==>  ccc
+switch-claude 1      <==>  scl 1      <==>  ccc 1
+switch-claude -v     <==>  scl -v     <==>  ccc -v
+switch-claude --list <==>  scl --list <==>  ccc --list
 ```
+
+**エイリアスの説明**：
+- `switch-claude` - 完全なコマンド、明確な意味
+- `scl` - Switch CLaude の略語
+- `ccc` - Choose Claude CLI の略語
 
 ### 基本的な使い方
 
@@ -132,6 +137,8 @@ switch-claude --list <==>  scl --list
 switch-claude
 # または
 scl
+# または
+ccc
 
 # プロバイダー番号1を直接選択
 scl 1

@@ -131,15 +131,20 @@ switch-claude
 
 ### 快捷命令 ⚡
 
-为了简化输入，工具提供了简短的命令别名 `scl`，完全等价于 `switch-claude`：
+为了简化输入，工具提供了多个命令别名，完全等价于 `switch-claude`：
 
 ```bash
-# 以下两组命令完全等价
-switch-claude        <==>  scl
-switch-claude 1      <==>  scl 1
-switch-claude -v     <==>  scl -v
-switch-claude --list <==>  scl --list
+# 以下命令完全等价
+switch-claude        <==>  scl  <==>  ccc
+switch-claude 1      <==>  scl 1      <==>  ccc 1
+switch-claude -v     <==>  scl -v     <==>  ccc -v
+switch-claude --list <==>  scl --list <==>  ccc --list
 ```
+
+**别名说明**：
+- `switch-claude` - 完整命令，语义清晰
+- `scl` - Switch CLaude 首字母缩写
+- `ccc` - Choose Claude CLI 缩写
 
 ### 基本用法
 
@@ -148,6 +153,8 @@ switch-claude --list <==>  scl --list
 switch-claude
 # 或
 scl
+# 或
+ccc
 
 # 直接选择编号为 1 的 provider
 scl 1
