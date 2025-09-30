@@ -62,6 +62,8 @@ npm link
 
 ```bash
 switch-claude
+# またはショートカットコマンドを使用
+scl
 ```
 
 初回実行時、ツールは自動的に以下を行います:
@@ -111,30 +113,44 @@ switch-claude
 
 ## 📖 使用方法
 
+### ショートカットコマンド ⚡
+
+入力を簡素化するため、ツールは `switch-claude` と完全に同等な短いコマンドエイリアス `scl` を提供します：
+
+```bash
+# 次のコマンドペアは同等です
+switch-claude        <==>  scl
+switch-claude 1      <==>  scl 1
+switch-claude -v     <==>  scl -v
+switch-claude --list <==>  scl --list
+```
+
 ### 基本的な使い方
 
 ```bash
 # 対話形式でプロバイダーを選択
 switch-claude
+# または
+scl
 
 # プロバイダー番号1を直接選択
-switch-claude 1
+scl 1
 
 # 環境変数のみ設定し、claudeを起動しない
-switch-claude -e 1
+scl -e 1
 
 # バージョンを確認し、更新をチェック
-switch-claude --version
+scl --version
 ```
 
 ### 検出とキャッシュ
 
 ```bash
 # キャッシュを強制的に更新し、すべてのプロバイダーを再チェック
-switch-claude --refresh
+scl --refresh
 
 # 詳細な検出情報（応答時間、エラーなど）を表示
-switch-claude -v 1
+scl -v 1
 ```
 
 ### 設定管理

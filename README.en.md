@@ -61,6 +61,8 @@ npm link
 
 ```bash
 switch-claude
+# Or use the shortcut command
+scl
 ```
 
 On the first run, the tool will automatically:
@@ -110,30 +112,44 @@ switch-claude
 
 ## 📖 Usage
 
+### Shortcut Command ⚡
+
+To simplify typing, the tool provides a short command alias `scl`, fully equivalent to `switch-claude`:
+
+```bash
+# The following command pairs are equivalent
+switch-claude        <==>  scl
+switch-claude 1      <==>  scl 1
+switch-claude -v     <==>  scl -v
+switch-claude --list <==>  scl --list
+```
+
 ### Basic Usage
 
 ```bash
 # Interactively select a provider
 switch-claude
+# Or
+scl
 
 # Directly select provider number 1
-switch-claude 1
+scl 1
 
 # Only set environment variables without starting claude
-switch-claude -e 1
+scl -e 1
 
 # View version and check for updates
-switch-claude --version
+scl --version
 ```
 
 ### Detection and Caching
 
 ```bash
 # Force refresh the cache and re-check all providers
-switch-claude --refresh
+scl --refresh
 
 # Show detailed detection info (response time, errors, etc.)
-switch-claude -v 1
+scl -v 1
 ```
 
 ### Configuration Management

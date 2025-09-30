@@ -67,6 +67,8 @@ npm link
 
 ```bash
 switch-claude
+# 或使用快捷命令
+scl
 ```
 
 首次运行时，工具会自动：
@@ -127,30 +129,44 @@ switch-claude
 
 ## 📖 使用方法
 
+### 快捷命令 ⚡
+
+为了简化输入，工具提供了简短的命令别名 `scl`，完全等价于 `switch-claude`：
+
+```bash
+# 以下两组命令完全等价
+switch-claude        <==>  scl
+switch-claude 1      <==>  scl 1
+switch-claude -v     <==>  scl -v
+switch-claude --list <==>  scl --list
+```
+
 ### 基本用法
 
 ```bash
 # 交互式选择 provider
 switch-claude
+# 或
+scl
 
 # 直接选择编号为 1 的 provider
-switch-claude 1
+scl 1
 
 # 只设置环境变量，不启动 claude
-switch-claude -e 1
+scl -e 1
 
 # 查看版本并检查更新
-switch-claude --version
+scl --version
 ```
 
 ### 检测和缓存
 
 ```bash
 # 强制刷新缓存，重新检测所有 provider
-switch-claude --refresh
+scl --refresh
 
 # 显示详细的检测信息（响应时间、错误详情等）
-switch-claude -v 1
+scl -v 1
 ```
 
 ### 配置管理
