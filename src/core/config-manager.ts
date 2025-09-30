@@ -82,6 +82,13 @@ export class ConfigManager {
         key: 'cr_your-api-key-here-replace-with-real-key',
         default: false,
       },
+      {
+        name: 'Provider3-WithProxy',
+        baseUrl: 'https://api.example3.com',
+        key: 'sk-your-api-key-here-replace-with-real-key',
+        default: false,
+        proxy: 'http://127.0.0.1:7897',
+      },
     ];
 
     await this.saveProviders(exampleConfig);

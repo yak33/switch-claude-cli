@@ -1,18 +1,18 @@
 import { ConfigManager } from '../core/config-manager.js';
 import { ApiTester } from '../core/api-tester.js';
 import { CacheManager } from '../core/cache-manager.js';
-import { StatsManager } from '../core/stats-manager.js';
 import { CliInterface } from '../ui/cli-interface.js';
 import { OutputFormatter } from '../ui/output-formatter.js';
 import { ProgressIndicator } from '../ui/progress-indicator.js';
-import { ValidationUtils } from '../utils/validation.js';
+import type { Provider, CliOptions, CommandResult, TestResult } from '../types/index.js';
 import { PlatformUtils } from '../utils/platform-utils.js';
 import { FileUtils } from '../utils/file-utils.js';
-import type { Provider, CommandResult, CliOptions, TestResult } from '../types';
+import { ValidationUtils } from '../utils/validation.js';
+import { normalizeProxyUrl } from '../utils/proxy-utils.js';
+import { StatsManager } from '../core/stats-manager.js';
 import updateNotifier from 'update-notifier';
 import { spawn } from 'child_process';
 import path from 'node:path';
-
 /**
  * 命令执行器
  * 负责处理所有CLI命令
@@ -124,6 +124,10 @@ export class CommandExecutor {
 
       if (options.add) {
         return this.executeAddCommand(providers);
+      }
+
+      if (options.edit && options.providerIndex) {
+        return this.executeEditCommand(providers, options.providerIndex);
       }
 
       if (options.remove && options.providerIndex) {
@@ -433,6 +437,16 @@ export class CommandExecutor {
     provider: Provider & { testResult?: TestResult },
     envOnly: boolean = false
   ): Promise<CommandResult> {
+    // 设置代理环境变量（如果配置了）
+    if (provider.proxy) {
+      // 标准化代理 URL（自动添加 http:// 前缀）
+      const normalizedProxy = normalizeProxyUrl(provider.proxy);
+      process.env.HTTP_PROXY = normalizedProxy;
+      process.env.HTTPS_PROXY = normalizedProxy;
+      process.env.http_proxy = normalizedProxy;
+      process.env.https_proxy = normalizedProxy;
+    }
+
     // 设置环境变量 - 使用原版的环境变量名称
     process.env.ANTHROPIC_BASE_URL = provider.baseUrl;
     process.env.ANTHROPIC_AUTH_TOKEN = provider.key;
@@ -441,6 +455,13 @@ export class CommandExecutor {
     console.log(`\n🔧 环境变量已设置:`);
     console.log(`   ANTHROPIC_BASE_URL=${provider.baseUrl}`);
     console.log(`   ANTHROPIC_AUTH_TOKEN=${provider.key.slice(0, 12)}...`);
+    
+    if (provider.proxy) {
+      // 显示标准化后的代理地址
+      const normalizedProxy = normalizeProxyUrl(provider.proxy);
+      console.log(`   HTTP_PROXY=${normalizedProxy}`);
+      console.log(`   HTTPS_PROXY=${normalizedProxy}`);
+    }
 
     const responseTime = provider.testResult?.responseTime ?? null;
     StatsManager.recordProviderUse(provider.name, true, responseTime);
@@ -448,6 +469,11 @@ export class CommandExecutor {
     if (envOnly) {
       console.log(`\n📋 环境变量设置完成！你可以手动运行 claude 命令`);
       console.log(`\n💡 在当前会话中，你也可以使用这些命令：`);
+      if (provider.proxy) {
+        const normalizedProxy = normalizeProxyUrl(provider.proxy);
+        console.log(`   $env:HTTP_PROXY="${normalizedProxy}"`);
+        console.log(`   $env:HTTPS_PROXY="${normalizedProxy}"`);
+      }
       console.log(`   $env:ANTHROPIC_BASE_URL="${provider.baseUrl}"`);
       console.log(`   $env:ANTHROPIC_AUTH_TOKEN="${provider.key}"`);
       console.log(`   claude`);
@@ -486,13 +512,7 @@ export class CommandExecutor {
             args = ['/c', 'claude'];
           } else if (ext === '.ps1') {
             command = 'powershell.exe';
-            args = [
-              '-NoProfile',
-              '-ExecutionPolicy',
-              'Bypass',
-              '-File',
-              claudePath,
-            ];
+            args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', claudePath];
           }
         } else {
           command = claudePath;
@@ -613,6 +633,46 @@ export class CommandExecutor {
     }
 
     return this.createSuccessResult(`Provider "${newProvider.name}" 添加成功`);
+  }
+
+  /**
+   * 执行编辑命令
+   */
+  private async executeEditCommand(
+    providers: Provider[],
+    indexStr: string
+  ): Promise<CommandResult> {
+    const validation = ValidationUtils.validateProviderIndex(indexStr, providers.length);
+    if (!validation.valid) {
+      return this.createErrorResult(validation.error || '无效索引');
+    }
+
+    const index = validation.value!;
+    const provider = providers[index]!;
+
+    const updatedProvider = await CliInterface.editProvider(provider, providers);
+    if (!updatedProvider) {
+      return this.createErrorResult('编辑操作已取消', 0);
+    }
+
+    // 如果设置为默认，清除其他默认设置
+    if (updatedProvider.default) {
+      providers.forEach((p) => (p.default = false));
+    }
+
+    // 替换原 Provider
+    providers[index] = updatedProvider;
+
+    const saveResult = await this.handleAsyncOperation(
+      () => this.configManager.saveProviders(providers),
+      '保存配置失败'
+    );
+
+    if (!saveResult.success) {
+      return this.createErrorResult(saveResult.error || '保存失败');
+    }
+
+    return this.createSuccessResult(`Provider "${updatedProvider.name}" 更新成功`);
   }
 
   /**
@@ -802,11 +862,7 @@ export class CommandExecutor {
       try {
         const info = await notifier.fetchInfo();
 
-        if (
-          info.latest &&
-          info.current &&
-          this.isVersionNewer(info.latest, info.current)
-        ) {
+        if (info.latest && info.current && this.isVersionNewer(info.latest, info.current)) {
           CliInterface.showUpdateNotification(info.current, info.latest);
         }
       } catch {
@@ -893,9 +949,7 @@ export class CommandExecutor {
     return false;
   }
 
-  private parseSemver(
-    version: string
-  ): { core: number[]; prerelease: string[] } | null {
+  private parseSemver(version: string): { core: number[]; prerelease: string[] } | null {
     if (!version || typeof version !== 'string') {
       return null;
     }

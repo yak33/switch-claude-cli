@@ -59,6 +59,13 @@ export class CliParser {
           options.add = true;
           break;
 
+        case '--edit':
+          options.edit = true;
+          if (i + 1 < args.length && !args[i + 1]?.startsWith('-')) {
+            options.providerIndex = args[++i];
+          }
+          break;
+
         case '--remove':
           options.remove = true;
           if (i + 1 < args.length && !args[i + 1]?.startsWith('-')) {
@@ -156,6 +163,7 @@ export class CliParser {
     const mutuallyExclusive = [
       'list',
       'add',
+      'edit',
       'remove',
       'setDefault',
       'clearDefault',
@@ -176,6 +184,13 @@ export class CliParser {
     }
 
     // 检查必需的参数
+    if (options.edit && !options.providerIndex) {
+      return {
+        valid: false,
+        error: '--edit 需要指定 provider 编号',
+      };
+    }
+
     if (options.remove && !options.providerIndex) {
       return {
         valid: false,

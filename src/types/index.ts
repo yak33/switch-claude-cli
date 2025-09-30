@@ -11,6 +11,8 @@ export interface Provider {
   key: string;
   /** 是否为默认 Provider */
   default?: boolean;
+  /** HTTP 代理配置 (例如: http://127.0.0.1:7897) */
+  proxy?: string;
 }
 
 export interface TestResult {
@@ -43,6 +45,7 @@ export interface CliOptions {
   list?: boolean;
   envOnly?: boolean;
   add?: boolean;
+  edit?: boolean;
   remove?: boolean;
   setDefault?: boolean;
   clearDefault?: boolean;

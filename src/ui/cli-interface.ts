@@ -1,11 +1,9 @@
 import inquirer from 'inquirer';
-import type { Provider } from '../types';
+import type { Provider } from '../types/index.js';
 import { ValidationUtils } from '../utils/validation.js';
+import { FileUtils } from '../utils/file-utils.js';
+import { getProxyFromEnv, isValidProxy } from '../utils/proxy-utils.js';
 
-/**
- * CLI 交互界面
- * 处理用户交互和输入
- */
 export class CliInterface {
   /**
    * 显示Provider选择菜单
@@ -47,6 +45,12 @@ export class CliInterface {
 
     const existingNames = existingProviders.map((p) => p.name);
 
+    // 检测系统代理
+    const detectedProxy = getProxyFromEnv();
+    if (detectedProxy) {
+      console.log(`💡 检测到系统代理: ${detectedProxy}`);
+    }
+
     try {
       const answers = await inquirer.prompt([
         {
@@ -77,6 +81,25 @@ export class CliInterface {
           },
         },
         {
+          type: 'input',
+          name: 'proxy',
+          message: detectedProxy
+            ? '请输入代理地址 (回车使用检测到的代理，或留空不使用):'
+            : '请输入代理地址 (可选，格式: 127.0.0.1:7897 或 http://127.0.0.1:7897):',
+          default: detectedProxy || '',
+          validate: (input: string) => {
+            // 空值表示不使用代理，直接返回 true
+            if (!input || input.trim() === '') {
+              return true;
+            }
+            // 验证代理格式
+            if (!isValidProxy(input)) {
+              return '代理地址格式不正确，支持格式: 127.0.0.1:7897 或 http://127.0.0.1:7897';
+            }
+            return true;
+          },
+        },
+        {
           type: 'confirm',
           name: 'setAsDefault',
           message: '是否设置为默认 Provider?',
@@ -84,12 +107,116 @@ export class CliInterface {
         },
       ]);
 
-      return {
+      const provider: Provider = {
         name: answers.name.trim(),
         baseUrl: answers.baseUrl.trim(),
         key: answers.key.trim(),
         default: answers.setAsDefault,
       };
+
+      // 只有当用户输入了代理地址时才添加 proxy 字段
+      if (answers.proxy && answers.proxy.trim()) {
+        provider.proxy = answers.proxy.trim();
+      }
+
+      return provider;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('cancelled')) {
+        console.log('\n操作已取消');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 交互式编辑Provider
+   */
+  static async editProvider(
+    provider: Provider,
+    existingProviders: Provider[]
+  ): Promise<Provider | null> {
+    console.log(`\n✏️  编辑 Provider: ${provider.name}\n`);
+
+    const existingNames = existingProviders
+      .filter((p) => p.name !== provider.name)
+      .map((p) => p.name);
+
+    // 检测系统代理
+    const detectedProxy = getProxyFromEnv();
+    const currentProxy = provider.proxy || '';
+
+    try {
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'name',
+          message: '请输入 Provider 名称:',
+          default: provider.name,
+          validate: (input: string) => {
+            if (input === provider.name) return true; // 保持原名称
+            const result = ValidationUtils.validateProviderName(input, existingNames);
+            return result.valid || result.error || false;
+          },
+        },
+        {
+          type: 'input',
+          name: 'baseUrl',
+          message: '请输入 API Base URL:',
+          default: provider.baseUrl,
+          validate: (input: string) => {
+            const result = ValidationUtils.validateUrl(input);
+            return result.valid || result.error || false;
+          },
+        },
+        {
+          type: 'input',
+          name: 'key',
+          message: '请输入 API Key:',
+          default: provider.key,
+          validate: (input: string) => {
+            const result = ValidationUtils.validateApiKey(input);
+            return result.valid || result.error || false;
+          },
+        },
+        {
+          type: 'input',
+          name: 'proxy',
+          message: detectedProxy
+            ? `请输入代理地址 (当前: ${currentProxy || '无'}, 检测到: ${detectedProxy}):`
+            : `请输入代理地址 (当前: ${currentProxy || '无'}):`,
+          default: currentProxy,
+          validate: (input: string) => {
+            if (!input || input.trim() === '') {
+              return true;
+            }
+            if (!isValidProxy(input)) {
+              return '代理地址格式不正确，支持格式: 127.0.0.1:7897 或 http://127.0.0.1:7897';
+            }
+            return true;
+          },
+        },
+        {
+          type: 'confirm',
+          name: 'setAsDefault',
+          message: '是否设置为默认 Provider?',
+          default: provider.default || false,
+        },
+      ]);
+
+      const updatedProvider: Provider = {
+        name: answers.name.trim(),
+        baseUrl: answers.baseUrl.trim(),
+        key: answers.key.trim(),
+        default: answers.setAsDefault,
+      };
+
+      // 只有当用户输入了代理地址时才添加 proxy 字段
+      if (answers.proxy && answers.proxy.trim()) {
+        updatedProvider.proxy = answers.proxy.trim();
+      }
+
+      return updatedProvider;
     } catch (error) {
       if (error instanceof Error && error.message.includes('cancelled')) {
         console.log('\n操作已取消');

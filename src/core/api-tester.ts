@@ -1,4 +1,5 @@
 import type { Provider, TestResult } from '../types';
+import { ProxyAgent } from 'undici';
 
 /**
  * API 测试器
@@ -61,6 +62,14 @@ export class ApiTester {
               max_tokens: 1,
             }),
           };
+
+          // 如果配置了代理，添加代理支持
+          if (provider.proxy) {
+            const dispatcher = new ProxyAgent(provider.proxy);
+            // TypeScript 的 RequestInit 类型不包含 dispatcher，但 undici 支持
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (options as any).dispatcher = dispatcher;
+          }
 
           const res = await fetch(`${provider.baseUrl}/v1/messages`, options);
           clearTimeout(timeoutId);

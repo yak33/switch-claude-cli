@@ -4,6 +4,40 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并且本项目遵守 [语义化版本控制](https://semver.org/lang/zh-CN/)。
 
+## [1.4.2] - 2025-09-30
+
+### 🚀 新增功能
+
+- **编辑 Provider 功能** ✏️：
+  - 新增 `--edit <编号>` 命令，支持编辑已有的 Provider 配置
+  - 编辑时显示当前值作为默认值，可以直接回车保留
+  - 支持修改名称、URL、API Key、代理和默认设置
+  - 无需删除后重新添加，更加便捷
+
+- **HTTP/HTTPS 代理支持** 🌐：
+  - 在 Provider 配置中添加可选的 `proxy` 字段，支持为每个 API 提供方单独配置代理
+  - 支持 HTTP 和 HTTPS 代理协议
+  - 在添加或编辑 Provider 时可以交互式输入代理地址
+  - **自动检测系统代理**：从环境变量（`HTTP_PROXY`/`HTTPS_PROXY`）自动检测并提示使用
+  - 适用于需要通过 VPN 或代理访问的 API 服务
+  - 使用 `undici` 库的 ProxyAgent 实现代理功能
+
+### 📖 文档更新
+
+- 在 README 中添加代理配置说明和示例
+- 更新配置示例，包含代理配置的 Provider
+
+### 🔧 技术改进
+
+- 新增 `undici` 依赖，提供更好的 HTTP 客户端和代理支持
+- 新增 `proxy-utils.ts` 工具模块，封装代理检测和验证逻辑
+- 在交互式添加或编辑 Provider 时增加代理地址输入和验证
+- 自动从 `HTTP_PROXY`/`HTTPS_PROXY` 环境变量读取代理配置
+- **启动 Claude 时自动设置代理环境变量**：如果 Provider 配置了代理，会自动设置 `HTTP_PROXY`/`HTTPS_PROXY` 环境变量，确保 Claude CLI 也能通过代理访问
+- 改进参数验证：`--edit`、`--remove`、`--set-default` 命令缺少必需参数时会正确提示错误
+
+---
+
 ## [1.4.1] - 2025-09-25
 
 ### 🐛 修复

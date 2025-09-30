@@ -32,6 +32,7 @@
 - 📺 **优化显示**：显示完整API名称，智能适应终端宽度
 - ✨ **TypeScript重构**：v1.4.0 新增！完全 TypeScript 重构，类型安全，模块化架构
 - 📈 **使用统计**：v1.4.0 新增！记录使用统计，支持导出和重置功能
+- 🌐 **代理支持**：v1.4.2 新增！支持为每个 Provider 配置 HTTP/HTTPS 代理
 
 ## 📦 安装
 
@@ -103,9 +104,20 @@ nano ~/.switch-claude/providers.json
     "name": "NonoCode",
     "baseUrl": "https://claude.nonocode.cn/api",
     "key": "cr_your-real-api-key-here"
+  },
+  {
+    "name": "AnyRouter-WithProxy",
+    "baseUrl": "https://api.anyrouter.com",
+    "key": "sk-your-real-api-key-here",
+    "proxy": "http://127.0.0.1:7897"
   }
 ]
 ```
+
+**代理配置说明** 🌐：
+- 如果某个 API 提供方需要通过代理访问（如 VPN），可以在配置中添加 `proxy` 字段
+- `proxy` 格式：`http://代理地址:端口`（例如：`http://127.0.0.1:7897`）
+- 未配置 `proxy` 字段的 Provider 会直接连接，不使用代理
 
 ### 3. 再次运行开始使用
 
@@ -149,6 +161,9 @@ switch-claude --list
 
 # 添加新的 provider
 switch-claude --add
+
+# 编辑编号为 2 的 provider
+switch-claude --edit 2
 
 # 删除编号为 2 的 provider
 switch-claude --remove 2
