@@ -58,6 +58,7 @@ export interface CliOptions {
   stats?: boolean;
   exportStats?: boolean;
   resetStats?: boolean;
+  noCheck?: boolean;
   providerIndex?: string;
   exportPath?: string;
   importPath?: string;

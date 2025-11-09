@@ -55,6 +55,10 @@ export class CliParser {
           options.envOnly = true;
           break;
 
+        case '--no-check':
+          options.noCheck = true;
+          break;
+
         case '--add':
           options.add = true;
           break;

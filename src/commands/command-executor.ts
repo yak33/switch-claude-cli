@@ -241,6 +241,11 @@ export class CommandExecutor {
   ): Promise<CommandResult> {
     // 注意：Provider列表已经在调用此方法之前显示了
 
+    // 如果指定了 providerIndex 或 --no-check，直接使用不检测
+    if ((providerIndex !== undefined || options.noCheck) && !options.refresh) {
+      return this.executeDirectSelection(providers, providerIndex, options);
+    }
+
     // 1. 检查缓存
     const cache = options.refresh ? {} : this.cacheManager.getCache();
     const cacheKeys = Object.keys(cache);
@@ -427,6 +432,46 @@ export class CommandExecutor {
     }
 
     // 7. 启动Claude
+    return this.launchClaude(selected, options.envOnly);
+  }
+
+  /**
+   * 直接选择 Provider（跳过检测）
+   */
+  private async executeDirectSelection(
+    providers: Provider[],
+    providerIndex?: string,
+    options: CliOptions = {}
+  ): Promise<CommandResult> {
+    let selected: Provider;
+
+    if (providerIndex !== undefined) {
+      // 用户指定了编号，直接使用
+      const index = parseInt(providerIndex, 10) - 1;
+      if (isNaN(index) || index < 0 || index >= providers.length) {
+        return this.createErrorResult(`编号 ${providerIndex} 无效，有效范围: 1-${providers.length}`);
+      }
+      selected = providers[index]!;
+      console.log(`\n👉 直接选择: ${selected.name} (${selected.baseUrl}) - 跳过检测`);
+    } else {
+      // 没有指定编号，但设置了 --no-check
+      // 检查是否有默认 provider
+      const defaultProvider = providers.find((p) => p.default);
+      if (defaultProvider) {
+        selected = defaultProvider;
+        console.log(`\n⭐ 使用默认 provider: ${selected.name} (${selected.baseUrl}) - 跳过检测`);
+      } else {
+        // 没有默认 provider，显示交互式选择
+        const answer = await CliInterface.selectProvider(providers);
+        if (answer === null) {
+          return this.createErrorResult('未选择 Provider', 0);
+        }
+        selected = providers[answer]!;
+        console.log(`\n👉 已选择: ${selected.name} (${selected.baseUrl}) - 跳过检测`);
+      }
+    }
+
+    // 启动 Claude
     return this.launchClaude(selected, options.envOnly);
   }
 

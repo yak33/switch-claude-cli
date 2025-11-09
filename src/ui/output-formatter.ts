@@ -90,6 +90,7 @@ export class OutputFormatter {
   -v, --verbose       显示详细的调试信息
   -l, --list          只列出 providers 不启动 claude
   -e, --env-only      只设置环境变量，不启动 claude
+  --no-check          跳过 API 可用性检测，直接使用 provider
   --add               添加新的 provider
   --edit <编号>       编辑指定编号的 provider
   --remove <编号>     删除指定编号的 provider
@@ -106,13 +107,14 @@ export class OutputFormatter {
   --reset-stats       重置统计数据
 
 参数:
-  编号                直接选择指定编号的 provider（跳过交互选择）
+  编号                直接选择指定编号的 provider（自动跳过 API 检测）
 
 示例:
   switch-claude           # 交互式选择
-  switch-claude 1         # 直接选择编号为 1 的 provider
+  switch-claude 1         # 直接选择编号为 1 的 provider（跳过检测）
   switch-claude --refresh # 强制刷新缓存后选择
   switch-claude -v 2      # 详细模式选择编号为 2 的 provider
+  switch-claude --no-check # 跳过检测，使用默认或交互选择
   switch-claude --list    # 只列出所有 providers
   switch-claude --add     # 添加新的 provider
   switch-claude --edit 2  # 编辑编号为 2 的 provider
